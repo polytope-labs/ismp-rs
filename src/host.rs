@@ -9,7 +9,7 @@ use codec::{Decode, Encode};
 use core::time::Duration;
 use derive_more::Display;
 
-#[derive(Clone, Debug, Copy, Encode, Decode, Display, PartialEq, Eq)]
+#[derive(Clone, Debug, Copy, Encode, Decode, Display, PartialEq, Eq, Hash)]
 pub enum ChainID {
     #[codec(index = 0)]
     ETHEREUM,
@@ -59,27 +59,27 @@ pub trait ISMPHost {
     // Storage Write functions
 
     /// Store a scale encoded consensus state
-    fn store_consensus_state(&self, id: ConsensusClientId, state: Vec<u8>) -> Result<(), Error>;
+    fn store_consensus_state(&mut self, id: ConsensusClientId, state: Vec<u8>) -> Result<(), Error>;
     /// Store the timestamp when the consensus client was updated
     fn store_consensus_update_time(
-        &self,
+        &mut self,
         id: ConsensusClientId,
         timestamp: Duration,
     ) -> Result<(), Error>;
     /// Store the timestamp when the state machine was updated
     fn store_state_machine_update_time(
-        &self,
+        &mut self,
         height: StateMachineHeight,
         timestamp: Duration,
     ) -> Result<(), Error>;
     /// Store the timestamp when the state machine was updated
     fn store_state_machine_commitment(
-        &self,
+        &mut self,
         height: StateMachineHeight,
         state: StateCommitment,
     ) -> Result<(), Error>;
     /// Freeze a state machine at the given height
-    fn freeze_state_machine(&self, height: StateMachineHeight) -> Result<(), Error>;
+    fn freeze_state_machine(&mut self, height: StateMachineHeight) -> Result<(), Error>;
 
     /// Return the keccak256 hash of a request
     /// Commitment is the hash of the concatenation of the data below

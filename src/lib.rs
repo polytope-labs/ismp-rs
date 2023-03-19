@@ -17,3 +17,8 @@ pub mod prelude {
     pub use alloc::vec;
     pub use alloc::vec::Vec;
 }
+
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;

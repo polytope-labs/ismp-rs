@@ -10,7 +10,7 @@ mod req_res;
 
 /// This function serves as an entry point to handle the message types provided by the ISMP protocol
 /// Does not handle create consensus client message.
-pub fn handle_incoming_message(host: &dyn ISMPHost, message: Message) -> Result<(), Error> {
+pub fn handle_incoming_message(host: &mut dyn ISMPHost, message: Message) -> Result<(), Error> {
     match message {
         Message::Consensus(consensus_message) => handle_consensus_message(host, consensus_message),
         Message::Request(req) => handle_request_message(host, req),
