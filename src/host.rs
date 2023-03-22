@@ -59,22 +59,22 @@ pub trait ISMPHost {
     // Storage Write functions
 
     /// Store a scale encoded consensus state
-    fn store_consensus_state(&mut self, id: ConsensusClientId, state: Vec<u8>) -> Result<(), Error>;
+    fn store_consensus_state(&self, id: ConsensusClientId, state: Vec<u8>) -> Result<(), Error>;
     /// Store the timestamp when the consensus client was updated
     fn store_consensus_update_time(
-        &mut self,
+        &self,
         id: ConsensusClientId,
         timestamp: Duration,
     ) -> Result<(), Error>;
     /// Store the timestamp when the state machine was updated
     fn store_state_machine_update_time(
-        &mut self,
+        &self,
         height: StateMachineHeight,
         timestamp: Duration,
     ) -> Result<(), Error>;
     /// Store the timestamp when the state machine was updated
     fn store_state_machine_commitment(
-        &mut self,
+        &self,
         height: StateMachineHeight,
         state: StateCommitment,
     ) -> Result<(), Error>;
