@@ -79,7 +79,7 @@ pub trait ISMPHost {
         state: StateCommitment,
     ) -> Result<(), Error>;
     /// Freeze a state machine at the given height
-    fn freeze_state_machine(&mut self, height: StateMachineHeight) -> Result<(), Error>;
+    fn freeze_state_machine(&self, height: StateMachineHeight) -> Result<(), Error>;
 
     /// Return the keccak256 hash of a request
     /// Commitment is the hash of the concatenation of the data below
