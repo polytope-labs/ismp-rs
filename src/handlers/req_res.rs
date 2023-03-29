@@ -1,6 +1,6 @@
 use crate::consensus_client::ConsensusClient;
 use crate::error::Error;
-use crate::handlers::verify_delay_passed;
+use crate::handlers::{verify_delay_passed, MessageResult, RequestResponseResult};
 use crate::host::ISMPHost;
 use crate::messaging::{Proof, RequestMessage, ResponseMessage};
 use crate::paths::{RequestPath, ResponsePath};
@@ -16,7 +16,7 @@ fn validate_state_machine(
     proof: &Proof,
 ) -> Result<Box<dyn ConsensusClient>, Error> {
     // Ensure consensus client is not frozen
-    let consensus_client_id = host.client_id_from_state_id(proof.height.id)?;
+    let consensus_client_id = proof.height.id.consensus_client;
     let consensus_client = host.consensus_client(consensus_client_id)?;
     if consensus_client.is_frozen(host, consensus_client_id)? {
         return Err(Error::FrozenConsensusClient {
@@ -35,7 +35,7 @@ fn validate_state_machine(
     if !verify_delay_passed(host, proof.height)? {
         return Err(Error::DelayNotElapsed {
             current_time: host.host_timestamp(),
-            update_time: host.state_machine_update_time(proof.height)?,
+            update_time: host.consensus_update_time(proof.height.id.consensus_client)?,
         });
     }
 
@@ -43,55 +43,74 @@ fn validate_state_machine(
 }
 
 /// Validate the state machine, verify the request message and dispatch the message to the router
-pub fn handle_request_message(host: &dyn ISMPHost, msg: RequestMessage) -> Result<(), Error> {
+pub fn handle_request_message(
+    host: &dyn ISMPHost,
+    msg: RequestMessage,
+) -> Result<MessageResult, Error> {
     let consensus_client = validate_state_machine(host, &msg.proof)?;
     let commitment = host.get_request_commitment(&msg.request);
     // Verify membership proof
     let key = RequestPath {
         dest_chain: msg.request.dest_chain,
+        source_chain: msg.request.source_chain,
         nonce: msg.request.nonce,
     }
     .to_string()
     .as_bytes()
     .to_vec();
-    consensus_client.verify_membership(host, key, commitment)?;
+    consensus_client.verify_membership(host, key, commitment, &msg.proof)?;
 
     let router = host.ismp_router();
 
+    let result = RequestResponseResult {
+        dest_chain: msg.request.dest_chain,
+        source_chain: msg.request.source_chain,
+        nonce: msg.request.nonce,
+    };
+
     router.dispatch(msg.request)?;
 
-    Ok(())
+    Ok(MessageResult::Request(result))
 }
 
 /// Validate the state machine, verify the response message and dispatch the message to the router
-pub fn handle_response_message(host: &dyn ISMPHost, msg: ResponseMessage) -> Result<(), Error> {
+pub fn handle_response_message(
+    host: &dyn ISMPHost,
+    msg: ResponseMessage,
+) -> Result<MessageResult, Error> {
     let consensus_client = validate_state_machine(host, &msg.proof)?;
-    // If host chain is the destination of the response, check if a request commitment exists
-    if host.host() == msg.response.request.source_chain {
-        let commitment = host.get_request_commitment(&msg.response.request);
-        if commitment != host.request_commitment(&msg.response.request)? {
-            return Err(Error::RequestCommitmentNotFound {
-                nonce: msg.response.request.nonce,
-                source: msg.response.request.source_chain,
-                dest: msg.response.request.dest_chain,
-            });
-        }
+    // For a response to be valid a request commitment must be present in storage
+    let commitment = host.request_commitment(&msg.response.request)?;
+
+    if commitment != host.get_request_commitment(&msg.response.request) {
+        return Err(Error::RequestCommitmentNotFound {
+            nonce: msg.response.request.nonce,
+            source: msg.response.request.source_chain,
+            dest: msg.response.request.dest_chain,
+        });
     }
 
     let commitment = host.get_response_commitment(&msg.response);
     let key = ResponsePath {
         dest_chain: msg.response.request.source_chain,
+        source_chain: msg.response.request.dest_chain,
         nonce: msg.response.request.nonce,
     }
     .to_string()
     .as_bytes()
     .to_vec();
     // Verify membership proof
-    consensus_client.verify_membership(host, key, commitment)?;
+    consensus_client.verify_membership(host, key, commitment, &msg.proof)?;
 
     let router = host.ismp_router();
 
+    let result = RequestResponseResult {
+        dest_chain: msg.response.request.source_chain,
+        source_chain: msg.response.request.dest_chain,
+        nonce: msg.response.request.nonce,
+    };
+
     router.write_response(msg.response)?;
 
-    Ok(())
+    Ok(MessageResult::Response(result))
 }
