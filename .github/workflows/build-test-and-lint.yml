@@ -16,17 +16,11 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
           submodules: recursive
 
-      - name: Read toolchain file
-        id: rust-toolchain
-        run: |
-          RUST_TOOLCHAIN=$(grep 'channel' rust-toolchain.toml | awk '{split($0,a," = "); print a[2]}' | tr -d '"')
-          echo "RUST_TOOLCHAIN=$RUST_TOOLCHAIN" >> $GITHUB_OUTPUT
-        shell: bash
-
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: ${{ steps.rust-toolchain.outputs.RUST_TOOLCHAIN }}
+          toolchain: nightly
+          targets: wasm32-unknown-unknown
 
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
@@ -37,7 +31,7 @@ jobs:
         run:  cargo build --all-targets --all-features --verbose
 
       - name: Build `no-std`
-        run:  cargo build --no-default-features --verbose --target=wasm32-unknown-unknown
+        run:  cargo +nightly build --no-default-features --verbose --target=wasm32-unknown-unknown
 
       - name: Run tests
         run: cargo test --all-features --verbose
