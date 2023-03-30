@@ -19,7 +19,7 @@ jobs:
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.66
+          toolchain: nightly
           targets: wasm32-unknown-unknown
 
       - name: Rust cache
