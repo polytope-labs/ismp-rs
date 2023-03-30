@@ -12,6 +12,9 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          submodules: recursive
 
       - name: Read toolchain file
         id: rust-toolchain
@@ -44,6 +47,9 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          submodules: recursive
 
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@nightly
