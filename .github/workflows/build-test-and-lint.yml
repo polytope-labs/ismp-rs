@@ -28,7 +28,7 @@ jobs:
           cache-on-failure: true
 
       - name: Build
-        run:  cargo +nightly build --all-targets --all-features --verbose
+        run:  cargo +nightly check --all --benches
 
       - name: Build `no-std`
         run:  cargo +nightly build --no-default-features --verbose --target=wasm32-unknown-unknown
