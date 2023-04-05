@@ -23,13 +23,18 @@ use core::time::Duration;
 
 pub type ConsensusClientId = u64;
 
+/// Fixed size hash type
+pub type Hash = [u8; 32];
+
 #[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct StateCommitment {
     /// Timestamp in seconds
     pub timestamp: u64,
-    /// Root hash of this commitment trie/tree.
-    pub commitment_root: Vec<u8>,
+    /// Root hash of the request/response merkle mountain range tree.
+    pub ismp_root: Hash,
+    /// Root hash of the global state trie.
+    pub state_root: Hash,
 }
 
 /// We define the intermediate state as the commitment to the global state trie at a given height
@@ -96,16 +101,25 @@ pub trait ConsensusClient {
         &self,
         host: &dyn ISMPHost,
         item: RequestResponse,
-        root: Vec<u8>,
+        root: Hash,
         proof: &Proof,
     ) -> Result<(), Error>;
+
+    /// Verify the state of proof of some arbitrary data. Should return the verified data
+    fn verify_state_proof(
+        &self,
+        host: &dyn ISMPHost,
+        key: Vec<u8>,
+        root: Hash,
+        proof: &Proof,
+    ) -> Result<Vec<u8>, Error>;
 
     /// Verify non-membership of proof of a commitment
     fn verify_non_membership(
         &self,
         host: &dyn ISMPHost,
         item: RequestResponse,
-        root: Vec<u8>,
+        root: Hash,
         proof: &Proof,
     ) -> Result<(), Error>;
 

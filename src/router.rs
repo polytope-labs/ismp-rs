@@ -15,9 +15,8 @@
 
 //! ISMPRouter definition
 
-use crate::{error::Error, host::ChainID, prelude::Vec};
+use crate::{consensus_client::StateMachineHeight, error::Error, host::ChainID, prelude::Vec};
 use codec::{Decode, Encode};
-use crate::consensus_client::StateMachineHeight;
 
 /// The ISMP POST request.
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]

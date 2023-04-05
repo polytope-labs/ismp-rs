@@ -31,7 +31,7 @@ pub fn handle(host: &dyn ISMPHost, msg: RequestMessage) -> Result<MessageResult,
     consensus_client.verify_membership(
         host,
         RequestResponse::Request(msg.request.clone()),
-        state.commitment_root,
+        state.ismp_root,
         &msg.proof,
     )?;
 
