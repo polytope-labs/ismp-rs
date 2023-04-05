@@ -17,6 +17,7 @@
 
 use crate::{error::Error, host::ChainID, prelude::Vec};
 use codec::{Decode, Encode};
+use crate::consensus_client::StateMachineHeight;
 
 /// The ISMP POST request.
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
@@ -52,6 +53,8 @@ pub struct GET {
     pub from: Vec<u8>,
     /// Storage keys that this request is interested in.
     pub keys: Vec<Vec<u8>>,
+    /// Height at which to read the state machine.
+    pub height: StateMachineHeight,
     /// Timestamp which this request expires by.
     pub timeout_timestamp: u64,
 }
