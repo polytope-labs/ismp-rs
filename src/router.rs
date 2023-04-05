@@ -3,7 +3,7 @@ use crate::host::ChainID;
 use crate::prelude::Vec;
 use codec::{Decode, Encode};
 
-#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo, Hash)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct Request {
     pub nonce: u64,

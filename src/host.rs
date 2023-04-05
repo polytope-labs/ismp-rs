@@ -92,7 +92,9 @@ pub trait ISMPHost {
     fn ismp_router(&self) -> Box<dyn IISMPRouter>;
 }
 
-#[derive(Clone, Debug, Copy, Encode, Decode, Display, PartialEq, Eq, scale_info::TypeInfo)]
+#[derive(
+    Clone, Debug, Copy, Encode, Decode, Display, PartialEq, Eq, scale_info::TypeInfo, Hash,
+)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub enum ChainID {
     #[codec(index = 0)]

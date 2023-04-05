@@ -3,7 +3,7 @@ use crate::host::ChainID;
 use alloc::string::String;
 use core::time::Duration;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Error {
     DelayNotElapsed {
         update_time: Duration,
