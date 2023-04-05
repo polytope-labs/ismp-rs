@@ -5,17 +5,17 @@ use codec::{Decode, Encode};
 use core::time::Duration;
 
 pub type ConsensusClientId = u64;
-pub const ETHEREUM_CONSENSUS_CLIENT_ID: ConsensusClientId = 100;
-pub const GNOSIS_CONSENSUS_CLIENT_ID: ConsensusClientId = 200;
 
 #[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct StateCommitment {
-    /// Timestamp in nanoseconds
+    /// Timestamp in seconds
     pub timestamp: u64,
+    /// Root hash of this commitment trie/tree.
     pub commitment_root: Vec<u8>,
 }
 
+/// We define the intermediate state as the commitment to the global state trie at a given height
 #[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct IntermediateState {
@@ -23,6 +23,8 @@ pub struct IntermediateState {
     pub commitment: StateCommitment,
 }
 
+/// Since consensus systems may come to conensus about the state of multiple state machines, we
+/// identify each state machine individually.
 #[derive(
     Debug, Clone, Copy, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq, Ord, PartialOrd,
 )]
@@ -41,7 +43,8 @@ pub struct StateMachineHeight {
     pub height: u64,
 }
 
-/// The consensus client handles logic for consensus proof verification
+/// We define the consensus client as a module that handles logic for consensus proof verification,
+/// and State-Proof verification as well.
 pub trait ConsensusClient {
     /// Should decode the scale encoded trusted consensus state and new consensus proof, verifying
     /// that:
@@ -49,10 +52,8 @@ pub trait ConsensusClient {
     /// - that the client hasn't elapsed it's unbonding period
     /// - check for byzantine behaviour
     /// - verify the consensus proofs
-    /// - finally return the new consensusState and state commitments.
-    /// - If byzantine behaviour is detected
-    /// - Implementations can deposit an event after successful verification
-    fn verify(
+    /// - finally return the new consensusState and verified state commitments.
+    fn verify_consensus(
         &self,
         host: &dyn ISMPHost,
         trusted_consensus_state: Vec<u8>,
