@@ -116,7 +116,7 @@ impl Request {
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct Response {
-    /// The reuest that triggered this response.
+    /// The request that triggered this response.
     pub request: Request,
     /// The response message.
     pub response: Vec<u8>,
