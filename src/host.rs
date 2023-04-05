@@ -1,10 +1,27 @@
+// Copyright (C) Polytope Labs Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+//! The ISMPHost definition
+
 use crate::{
     consensus_client::{
         ConsensusClient, ConsensusClientId, StateCommitment, StateMachineHeight, StateMachineId,
     },
     error::Error,
     prelude::Vec,
-    router::{IISMPRouter, Request, Response},
+    router::{ISMPRouter, Request, Response},
 };
 use alloc::boxed::Box;
 use codec::{Decode, Encode};
@@ -111,7 +128,7 @@ pub trait ISMPHost {
     fn delay_period(&self, id: ConsensusClientId) -> Duration;
 
     /// Return a handle to the router
-    fn ismp_router(&self) -> Box<dyn IISMPRouter>;
+    fn ismp_router(&self) -> Box<dyn ISMPRouter>;
 }
 
 #[derive(Clone, Debug, Copy, Encode, Decode, Display, PartialEq, Eq, scale_info::TypeInfo)]
