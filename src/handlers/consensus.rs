@@ -32,10 +32,20 @@ pub fn handle(host: &dyn ISMPHost, msg: ConsensusMessage) -> Result<MessageResul
     let consensus_client = host.consensus_client(msg.consensus_client_id)?;
     let trusted_state = host.consensus_state(msg.consensus_client_id)?;
 
+    let update_time = host.consensus_update_time(msg.consensus_client_id)?;
+    let delay = host.challenge_period(msg.consensus_client_id);
+    let now = host.timestamp();
+
+    if (now - update_time) < delay {
+        Err(Error::DelayNotElapsed { current_time: now, update_time })?
+    }
+
+    host.is_expired(msg.consensus_client_id)?;
+
     let (new_state, intermediate_states) =
         consensus_client.verify_consensus(host, trusted_state, msg.consensus_proof)?;
     host.store_consensus_state(msg.consensus_client_id, new_state)?;
-    let timestamp = host.host_timestamp();
+    let timestamp = host.timestamp();
     host.store_consensus_update_time(msg.consensus_client_id, timestamp)?;
     let mut state_updates = BTreeSet::new();
     for intermediate_state in intermediate_states {

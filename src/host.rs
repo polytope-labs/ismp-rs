@@ -46,7 +46,7 @@ pub trait ISMPHost {
     /// Returns the scale encoded consensus state for a consensus client
     fn consensus_state(&self, id: ConsensusClientId) -> Result<Vec<u8>, Error>;
     /// Return the host timestamp in nanoseconds
-    fn host_timestamp(&self) -> Duration;
+    fn timestamp(&self) -> Duration;
     /// Checks if a state machine is frozen at the provided height
     fn is_frozen(&self, height: StateMachineHeight) -> Result<bool, Error>;
     /// Fetch commitment of a request from storage
@@ -125,7 +125,19 @@ pub trait ISMPHost {
     fn keccak256(&self, bytes: &[u8]) -> [u8; 32];
 
     /// Returns the configured delay period for a consensus client
-    fn delay_period(&self, id: ConsensusClientId) -> Duration;
+    fn challenge_period(&self, id: ConsensusClientId) -> Duration;
+
+    /// Check if the client has expired since the last update
+    fn is_expired(&self, consensus_id: ConsensusClientId) -> Result<(), Error> {
+        let host_timestamp = self.timestamp();
+        let unbonding_period = self.consensus_client(consensus_id)?.unbonding_period();
+        let last_update = self.consensus_update_time(consensus_id)?;
+        if host_timestamp.saturating_sub(last_update) > unbonding_period {
+            Err(Error::UnbondingPeriodElapsed { consensus_id })?
+        }
+
+        Ok(())
+    }
 
     /// Return a handle to the router
     fn ismp_router(&self) -> Box<dyn ISMPRouter>;

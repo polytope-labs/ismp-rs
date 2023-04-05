@@ -82,17 +82,6 @@ pub trait ConsensusClient {
         proof: Vec<u8>,
     ) -> Result<(Vec<u8>, Vec<IntermediateState>), Error>;
 
-    /// Check if the client has expired since the last update
-    fn is_expired(&self, host: &dyn ISMPHost) -> Result<bool, Error> {
-        let host_timestamp = host.host_timestamp();
-        let unbonding_period = self.unbonding_period();
-        let last_update = host.consensus_update_time(self.consensus_id())?;
-        Ok(host_timestamp.saturating_sub(last_update) > unbonding_period)
-    }
-
-    /// Return the configured ConsensusClientId for this client
-    fn consensus_id(&self) -> ConsensusClientId;
-
     /// Return unbonding period
     fn unbonding_period(&self) -> Duration;
 

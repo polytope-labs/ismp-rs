@@ -71,8 +71,8 @@ fn verify_delay_passed(
     proof_height: StateMachineHeight,
 ) -> Result<bool, Error> {
     let update_time = host.consensus_update_time(proof_height.id.consensus_client)?;
-    let delay_period = host.delay_period(proof_height.id.consensus_client);
-    let current_timestamp = host.host_timestamp();
+    let delay_period = host.challenge_period(proof_height.id.consensus_client);
+    let current_timestamp = host.timestamp();
     Ok(current_timestamp - update_time > delay_period)
 }
 
@@ -99,7 +99,7 @@ fn validate_state_machine(
     // Ensure delay period has elapsed
     if !verify_delay_passed(host, proof.height)? {
         return Err(Error::DelayNotElapsed {
-            current_time: host.host_timestamp(),
+            current_time: host.timestamp(),
             update_time: host.consensus_update_time(proof.height.id.consensus_client)?,
         })
     }

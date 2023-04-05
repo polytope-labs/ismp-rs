@@ -24,6 +24,7 @@ use core::time::Duration;
 
 #[derive(Debug)]
 pub enum Error {
+    UnbondingPeriodElapsed { consensus_id: ConsensusClientId },
     DelayNotElapsed { update_time: Duration, current_time: Duration },
     ConsensusStateNotFound { id: ConsensusClientId },
     StateCommitmentNotFound { height: StateMachineHeight },
