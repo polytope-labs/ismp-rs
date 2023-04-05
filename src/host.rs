@@ -10,7 +10,7 @@ use alloc::boxed::Box;
 use codec::{Decode, Encode};
 use core::time::Duration;
 use derive_more::Display;
-use ethabi::Uint;
+use primitive_types::U256;
 
 pub trait ISMPHost {
     fn host(&self) -> ChainID;
@@ -60,22 +60,34 @@ pub trait ISMPHost {
     /// Commitment is the hash of the concatenation of the data below
     /// request.source_chain + request.dest_chain + request.nonce + request.data
     fn get_request_commitment(&self, req: &Request) -> Vec<u8> {
-        let source_chain = ethabi::token::Token::Uint(Uint::from(req.source_chain as u8));
-        let dest_chain = ethabi::token::Token::Uint(Uint::from(req.dest_chain as u8));
-        let nonce = ethabi::token::Token::Uint(Uint::from(req.nonce));
-        let data = ethabi::token::Token::Bytes(req.data.clone());
-        let buf = ethabi::encode(&[source_chain, dest_chain, nonce, data]);
+        let mut buf = Vec::new();
+        let mut source_chain = [0u8; 32];
+        let mut dest_chain = [0u8; 32];
+        let mut nonce = [0u8; 32];
+        U256::from(req.source_chain as u8).to_big_endian(&mut source_chain);
+        U256::from(req.dest_chain as u8).to_big_endian(&mut dest_chain);
+        U256::from(req.nonce).to_big_endian(&mut nonce);
+        buf.extend_from_slice(&source_chain);
+        buf.extend_from_slice(&dest_chain);
+        buf.extend_from_slice(&nonce);
+        buf.extend_from_slice(&req.data);
         self.keccak256(&buf[..]).to_vec()
     }
 
     /// Return the keccak256 of a response
     fn get_response_commitment(&self, res: &Response) -> Vec<u8> {
-        let source_chain = ethabi::token::Token::Uint(Uint::from(res.request.source_chain as u8));
-        let dest_chain = ethabi::token::Token::Uint(Uint::from(res.request.dest_chain as u8));
-        let nonce = ethabi::token::Token::Uint(Uint::from(res.request.nonce));
-        let data = ethabi::token::Token::Bytes(res.request.data.clone());
-        let response = ethabi::token::Token::Bytes(res.response.clone());
-        let buf = ethabi::encode(&[source_chain, dest_chain, nonce, data, response]);
+        let mut buf = Vec::new();
+        let mut source_chain = [0u8; 32];
+        let mut dest_chain = [0u8; 32];
+        let mut nonce = [0u8; 32];
+        U256::from(res.request.source_chain as u8).to_big_endian(&mut source_chain);
+        U256::from(res.request.dest_chain as u8).to_big_endian(&mut dest_chain);
+        U256::from(res.request.nonce as u8).to_big_endian(&mut nonce);
+        buf.extend_from_slice(&source_chain);
+        buf.extend_from_slice(&dest_chain);
+        buf.extend_from_slice(&nonce);
+        buf.extend_from_slice(&res.request.data);
+        buf.extend_from_slice(&res.response);
         self.keccak256(&buf[..]).to_vec()
     }
 
