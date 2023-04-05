@@ -28,10 +28,7 @@ use alloc::collections::BTreeSet;
 /// is frozen or expired
 /// The client implementation can choose to deposit an event compatible with the host platform on
 /// successful verification
-pub fn handle_consensus_message(
-    host: &dyn ISMPHost,
-    msg: ConsensusMessage,
-) -> Result<MessageResult, Error> {
+pub fn handle(host: &dyn ISMPHost, msg: ConsensusMessage) -> Result<MessageResult, Error> {
     let consensus_client = host.consensus_client(msg.consensus_client_id)?;
     let trusted_state = host.consensus_state(msg.consensus_client_id)?;
 

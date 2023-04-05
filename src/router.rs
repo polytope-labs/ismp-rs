@@ -1,10 +1,10 @@
 use crate::{error::Error, host::ChainID, prelude::Vec};
 use codec::{Decode, Encode};
 
-/// The ISMP request.
+/// The ISMP POST request.
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
-pub struct Post {
+pub struct POST {
     /// The source state machine of this request.
     pub source_chain: ChainID,
     /// The destination state machine of this request.
@@ -21,10 +21,10 @@ pub struct Post {
     pub data: Vec<u8>,
 }
 
-/// The ISMP request.
+/// The ISMP GET request.
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
-pub struct Get {
+pub struct GET {
     /// The source state machine of this request.
     pub source_chain: ChainID,
     /// The destination state machine of this request.
@@ -45,10 +45,52 @@ pub struct Get {
 pub enum Request {
     /// A post request allows a module on a state machine to send arbitrary bytes to another module
     /// living in another state machine.
-    Post(Post),
+    Post(POST),
     /// A get request allows a module on a state machine to read the storage of another module
     /// living in another state machine.
-    Get(Get),
+    Get(GET),
+}
+
+impl Request {
+    /// Get the source chain
+    pub fn source_chain(&self) -> ChainID {
+        match self {
+            Request::Get(get) => get.source_chain,
+            Request::Post(post) => post.source_chain,
+        }
+    }
+
+    /// Get the destination chain
+    pub fn dest_chain(&self) -> ChainID {
+        match self {
+            Request::Get(get) => get.dest_chain,
+            Request::Post(post) => post.dest_chain,
+        }
+    }
+
+    /// Get the request nonce
+    pub fn nonce(&self) -> u64 {
+        match self {
+            Request::Get(get) => get.nonce,
+            Request::Post(post) => post.nonce,
+        }
+    }
+
+    /// Get the POST request data
+    pub fn data(&self) -> Option<Vec<u8>> {
+        match self {
+            Request::Get(_) => None,
+            Request::Post(post) => Some(post.data.clone()),
+        }
+    }
+
+    /// Get the GET request keys.
+    pub fn keys(&self) -> Option<Vec<Vec<u8>>> {
+        match self {
+            Request::Post(_) => None,
+            Request::Get(get) => Some(get.keys.clone()),
+        }
+    }
 }
 
 /// The ISMP response

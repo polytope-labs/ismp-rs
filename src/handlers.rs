@@ -1,14 +1,10 @@
 use crate::{
     consensus_client::{ConsensusClient, ConsensusClientId, StateMachineHeight},
     error::Error,
-    handlers::{
-        consensus::handle_consensus_message,
-        request::{handle_request_message, handle_response_message},
-    },
     host::{ChainID, ISMPHost},
     messaging::{Message, Proof},
 };
-use alloc::collections::BTreeSet;
+use alloc::{boxed::Box, collections::BTreeSet};
 
 mod consensus;
 mod request;
@@ -44,9 +40,9 @@ pub fn handle_incoming_message(
     message: Message,
 ) -> Result<MessageResult, Error> {
     match message {
-        Message::Consensus(consensus_message) => handle_consensus_message(host, consensus_message),
-        Message::Request(req) => handle_request_message(host, req),
-        Message::Response(resp) => handle_response_message(host, resp),
+        Message::Consensus(consensus_message) => consensus::handle(host, consensus_message),
+        Message::Request(req) => request::handle(host, req),
+        Message::Response(resp) => response::handle(host, resp),
         _ => Err(Error::CannotHandleConsensusMessage),
     }
 }

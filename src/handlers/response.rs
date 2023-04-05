@@ -24,19 +24,16 @@ use crate::{
 };
 
 /// Validate the state machine, verify the response message and dispatch the message to the router
-pub fn handle_response_message(
-    host: &dyn ISMPHost,
-    msg: ResponseMessage,
-) -> Result<MessageResult, Error> {
+pub fn handle(host: &dyn ISMPHost, msg: ResponseMessage) -> Result<MessageResult, Error> {
     let consensus_client = validate_state_machine(host, &msg.proof)?;
     // For a response to be valid a request commitment must be present in storage
     let commitment = host.request_commitment(&msg.response.request)?;
 
     if commitment != host.get_request_commitment(&msg.response.request) {
         return Err(Error::RequestCommitmentNotFound {
-            nonce: msg.response.request.nonce,
-            source: msg.response.request.source_chain,
-            dest: msg.response.request.dest_chain,
+            nonce: msg.response.request.nonce(),
+            source: msg.response.request.source_chain(),
+            dest: msg.response.request.dest_chain(),
         })
     }
 
@@ -52,9 +49,9 @@ pub fn handle_response_message(
     let router = host.ismp_router();
 
     let result = RequestResponseResult {
-        dest_chain: msg.response.request.source_chain,
-        source_chain: msg.response.request.dest_chain,
-        nonce: msg.response.request.nonce,
+        dest_chain: msg.response.request.source_chain(),
+        source_chain: msg.response.request.dest_chain(),
+        nonce: msg.response.request.nonce(),
     };
 
     router.write_response(msg.response)?;

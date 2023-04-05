@@ -16,7 +16,6 @@
 //! The ISMP request handler
 
 use crate::{
-    consensus_client::ConsensusClient,
     error::Error,
     handlers::{validate_state_machine, MessageResult, RequestResponseResult},
     host::ISMPHost,
@@ -25,10 +24,7 @@ use crate::{
 };
 
 /// Validate the state machine, verify the request message and dispatch the message to the router
-pub fn handle_request_message(
-    host: &dyn ISMPHost,
-    msg: RequestMessage,
-) -> Result<MessageResult, Error> {
+pub fn handle(host: &dyn ISMPHost, msg: RequestMessage) -> Result<MessageResult, Error> {
     let consensus_client = validate_state_machine(host, &msg.proof)?;
     // Verify membership proof
     let state = host.state_machine_commitment(msg.proof.height)?;
@@ -42,9 +38,9 @@ pub fn handle_request_message(
     let router = host.ismp_router();
 
     let result = RequestResponseResult {
-        dest_chain: msg.request.dest_chain,
-        source_chain: msg.request.source_chain,
-        nonce: msg.request.nonce,
+        dest_chain: msg.request.dest_chain(),
+        source_chain: msg.request.source_chain(),
+        nonce: msg.request.nonce(),
     };
 
     router.dispatch(msg.request)?;
