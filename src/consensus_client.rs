@@ -88,7 +88,7 @@ pub trait ConsensusClient {
         &self,
         host: &dyn ISMPHost,
         item: RequestResponse,
-        root: Hash,
+        root: StateCommitment,
         proof: &Proof,
     ) -> Result<(), Error>;
 
@@ -97,7 +97,7 @@ pub trait ConsensusClient {
         &self,
         host: &dyn ISMPHost,
         key: Vec<u8>,
-        root: Hash,
+        root: StateCommitment,
         proof: &Proof,
     ) -> Result<Vec<u8>, Error>;
 
@@ -106,7 +106,7 @@ pub trait ConsensusClient {
         &self,
         host: &dyn ISMPHost,
         item: RequestResponse,
-        root: Hash,
+        root: StateCommitment,
         proof: &Proof,
     ) -> Result<(), Error>;
 
