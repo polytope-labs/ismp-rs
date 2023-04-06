@@ -98,7 +98,8 @@ fn validate_state_machine(
 
     // Ensure delay period has elapsed
     if !verify_delay_passed(host, proof.height)? {
-        return Err(Error::DelayNotElapsed {
+        return Err(Error::ChallengePeriodNotElapsed {
+            consensus_id: consensus_client_id,
             current_time: host.timestamp(),
             update_time: host.consensus_update_time(proof.height.id.consensus_client)?,
         })

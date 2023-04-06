@@ -36,7 +36,11 @@ pub fn handle(host: &dyn ISMPHost, msg: ConsensusMessage) -> Result<MessageResul
     consensus_client.is_frozen(&trusted_state)?;
 
     if (now - update_time) < delay {
-        Err(Error::DelayNotElapsed { current_time: now, update_time })?
+        Err(Error::ChallengePeriodNotElapsed {
+            consensus_id: msg.consensus_client_id,
+            current_time: now,
+            update_time,
+        })?
     }
 
     host.is_expired(msg.consensus_client_id)?;
