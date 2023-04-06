@@ -19,7 +19,7 @@ use crate::{
     error::Error,
     handlers::{ConsensusUpdateResult, MessageResult},
     host::ISMPHost,
-    messaging::{ConsensusMessage, Message},
+    messaging::{ConsensusMessage},
 };
 use alloc::collections::BTreeSet;
 
@@ -82,28 +82,4 @@ pub fn handle(host: &dyn ISMPHost, msg: ConsensusMessage) -> Result<MessageResul
         ConsensusUpdateResult { consensus_client_id: msg.consensus_client_id, state_updates };
 
     Ok(MessageResult::ConsensusMessage(result))
-}
-
-/// Create a consensus client
-pub fn create_consensus_client(host: &dyn ISMPHost, message: Message) -> Result<(), Error> {
-    match message {
-        Message::CreateConsensusClient(create_consensus_client_message) => {
-            // Store the initial state for the consensus client
-            host.store_consensus_state(
-                create_consensus_client_message.consensus_client_id,
-                create_consensus_client_message.consensus_state,
-            )?;
-
-            // Store all intermedite state machine commitments
-            for intermediate_state in create_consensus_client_message.state_machine_commitments {
-                host.store_state_machine_commitment(
-                    intermediate_state.height,
-                    intermediate_state.commitment,
-                )?;
-            }
-
-            Ok(())
-        }
-        _ => Err(Error::InvalidMessage),
-    }
 }
