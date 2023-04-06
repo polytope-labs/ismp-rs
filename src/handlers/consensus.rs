@@ -19,7 +19,7 @@ use crate::{
     error::Error,
     handlers::{ConsensusUpdateResult, MessageResult},
     host::ISMPHost,
-    messaging::{ConsensusMessage},
+    messaging::ConsensusMessage,
 };
 use alloc::collections::BTreeSet;
 
