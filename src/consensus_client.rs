@@ -111,5 +111,5 @@ pub trait ConsensusClient {
     ) -> Result<(), Error>;
 
     /// Decode trusted state and check if consensus client is frozen
-    fn is_frozen(&self, trusted_consensus_state: Vec<u8>) -> Result<(), Error>;
+    fn is_frozen(&self, trusted_consensus_state: &[u8]) -> Result<(), Error>;
 }
