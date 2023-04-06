@@ -36,6 +36,9 @@ pub fn handle(host: &dyn ISMPHost, msg: ConsensusMessage) -> Result<MessageResul
     let delay = host.challenge_period(msg.consensus_client_id);
     let now = host.timestamp();
 
+    // Ensure client is not frozen
+    consensus_client.is_frozen(trusted_state.clone())?;
+
     if (now - update_time) < delay {
         Err(Error::DelayNotElapsed { current_time: now, update_time })?
     }

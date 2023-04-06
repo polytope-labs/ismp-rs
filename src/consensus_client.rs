@@ -70,8 +70,6 @@ pub struct StateMachineHeight {
 pub trait ConsensusClient {
     /// Should decode the scale encoded trusted consensus state and new consensus proof, verifying
     /// that:
-    /// - the client isn't frozen yet
-    /// - that the client hasn't elapsed it's unbonding period
     /// - check for byzantine behaviour
     /// - verify the consensus proofs
     /// - finally return the new consensusState and verified state commitments.
@@ -112,6 +110,6 @@ pub trait ConsensusClient {
         proof: &Proof,
     ) -> Result<(), Error>;
 
-    /// Check if consensus client is frozen
-    fn is_frozen(&self, host: &dyn ISMPHost, id: ConsensusClientId) -> Result<bool, Error>;
+    /// Decode trusted state and check if consensus client is frozen
+    fn is_frozen(&self, trusted_consensus_state: Vec<u8>) -> Result<(), Error>;
 }

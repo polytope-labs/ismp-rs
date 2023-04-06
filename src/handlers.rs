@@ -87,9 +87,9 @@ fn validate_state_machine(
     // Ensure consensus client is not frozen
     let consensus_client_id = proof.height.id.consensus_client;
     let consensus_client = host.consensus_client(consensus_client_id)?;
-    if consensus_client.is_frozen(host, consensus_client_id)? {
-        return Err(Error::FrozenConsensusClient { id: consensus_client_id })
-    }
+    let consensus_state = host.consensus_state(consensus_client_id)?;
+    // Ensure client is not frozen
+    consensus_client.is_frozen(consensus_state)?;
 
     // Ensure state machine is not frozen
     if host.is_frozen(proof.height)? {
