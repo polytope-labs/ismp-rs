@@ -54,19 +54,19 @@ pub fn handle(host: &dyn ISMPHost, msg: ConsensusMessage) -> Result<MessageResul
     for intermediate_state in intermediate_states {
         // If a state machine is frozen, we skip it
         if host.is_frozen(intermediate_state.height)? {
-            continue;
+            continue
         }
 
         let previous_latest_height = host.latest_commitment_height(intermediate_state.height.id)?;
 
         // Only allow heights greater than latest height
         if previous_latest_height > intermediate_state.height {
-            continue;
+            continue
         }
 
         // Skip duplicate states
         if host.state_machine_commitment(intermediate_state.height).is_ok() {
-            continue;
+            continue
         }
 
         host.store_state_machine_commitment(
