@@ -1,14 +1,33 @@
-use crate::consensus_client::{
-    ConsensusClient, ConsensusClientId, StateCommitment, StateMachineHeight, StateMachineId,
+// Copyright (C) Polytope Labs Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+//! The ISMPHost definition
+
+use crate::{
+    consensus_client::{
+        ConsensusClient, ConsensusClientId, StateCommitment, StateMachineHeight, StateMachineId,
+    },
+    error::Error,
+    prelude::Vec,
+    router::{ISMPRouter, Request, Response},
 };
-use crate::error::Error;
-use crate::prelude::Vec;
-use crate::router::{IISMPRouter, Request, Response};
 use alloc::boxed::Box;
-use alloc::string::ToString;
 use codec::{Decode, Encode};
 use core::time::Duration;
 use derive_more::Display;
+use primitive_types::U256;
 
 pub trait ISMPHost {
     fn host(&self) -> ChainID;
@@ -27,7 +46,7 @@ pub trait ISMPHost {
     /// Returns the scale encoded consensus state for a consensus client
     fn consensus_state(&self, id: ConsensusClientId) -> Result<Vec<u8>, Error>;
     /// Return the host timestamp in nanoseconds
-    fn host_timestamp(&self) -> Duration;
+    fn timestamp(&self) -> Duration;
     /// Checks if a state machine is frozen at the provided height
     fn is_frozen(&self, height: StateMachineHeight) -> Result<bool, Error>;
     /// Fetch commitment of a request from storage
@@ -56,25 +75,45 @@ pub trait ISMPHost {
 
     /// Return the keccak256 hash of a request
     /// Commitment is the hash of the concatenation of the data below
-    /// request.dest_chain.encode() + request.timeout_timestamp.encode() + request.nonce.encode() + request.data
+    /// request.source_chain + request.dest_chain + request.nonce + request.data
     fn get_request_commitment(&self, req: &Request) -> Vec<u8> {
+        let req = match req {
+            Request::Post(post) => post,
+            _ => unimplemented!(),
+        };
+
         let mut buf = Vec::new();
-        let dest_chain = req.dest_chain.to_string().as_bytes().to_vec();
-        let timeout_timestamp = req.timeout_timestamp.encode();
-        let nonce = req.nonce.encode();
-        buf.extend_from_slice(&dest_chain[..]);
-        buf.extend_from_slice(&timeout_timestamp[..]);
-        buf.extend_from_slice(&nonce[..]);
-        buf.extend_from_slice(&req.data[..]);
+        let mut source_chain = [0u8; 32];
+        let mut dest_chain = [0u8; 32];
+        let mut nonce = [0u8; 32];
+        U256::from(req.source_chain as u8).to_big_endian(&mut source_chain);
+        U256::from(req.dest_chain as u8).to_big_endian(&mut dest_chain);
+        U256::from(req.nonce).to_big_endian(&mut nonce);
+        buf.extend_from_slice(&source_chain);
+        buf.extend_from_slice(&dest_chain);
+        buf.extend_from_slice(&nonce);
+        buf.extend_from_slice(&req.data);
         self.keccak256(&buf[..]).to_vec()
     }
 
     /// Return the keccak256 of a response
     fn get_response_commitment(&self, res: &Response) -> Vec<u8> {
+        let req = match res.request {
+            Request::Post(ref post) => post,
+            _ => unimplemented!(),
+        };
         let mut buf = Vec::new();
-        let nonce = res.request.nonce.encode();
-        buf.extend_from_slice(&nonce[..]);
-        buf.extend_from_slice(&res.response[..]);
+        let mut source_chain = [0u8; 32];
+        let mut dest_chain = [0u8; 32];
+        let mut nonce = [0u8; 32];
+        U256::from(req.source_chain as u8).to_big_endian(&mut source_chain);
+        U256::from(req.dest_chain as u8).to_big_endian(&mut dest_chain);
+        U256::from(req.nonce as u8).to_big_endian(&mut nonce);
+        buf.extend_from_slice(&source_chain);
+        buf.extend_from_slice(&dest_chain);
+        buf.extend_from_slice(&nonce);
+        buf.extend_from_slice(&req.data);
+        buf.extend_from_slice(&res.response);
         self.keccak256(&buf[..]).to_vec()
     }
 
@@ -86,10 +125,22 @@ pub trait ISMPHost {
     fn keccak256(&self, bytes: &[u8]) -> [u8; 32];
 
     /// Returns the configured delay period for a consensus client
-    fn delay_period(&self, id: ConsensusClientId) -> Duration;
+    fn challenge_period(&self, id: ConsensusClientId) -> Duration;
+
+    /// Check if the client has expired since the last update
+    fn is_expired(&self, consensus_id: ConsensusClientId) -> Result<(), Error> {
+        let host_timestamp = self.timestamp();
+        let unbonding_period = self.consensus_client(consensus_id)?.unbonding_period();
+        let last_update = self.consensus_update_time(consensus_id)?;
+        if host_timestamp.saturating_sub(last_update) > unbonding_period {
+            Err(Error::UnbondingPeriodElapsed { consensus_id })?
+        }
+
+        Ok(())
+    }
 
     /// Return a handle to the router
-    fn ismp_router(&self) -> Box<dyn IISMPRouter>;
+    fn ismp_router(&self) -> Box<dyn ISMPRouter>;
 }
 
 #[derive(
@@ -98,19 +149,19 @@ pub trait ISMPHost {
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub enum ChainID {
     #[codec(index = 0)]
-    ETHEREUM,
+    ETHEREUM = 0,
     #[codec(index = 1)]
-    GNOSIS,
+    GNOSIS = 1,
     #[codec(index = 2)]
-    ARBITRUM,
+    ARBITRUM = 2,
     #[codec(index = 3)]
-    OPTIMISM,
+    OPTIMISM = 3,
     #[codec(index = 4)]
-    BASE,
+    BASE = 4,
     #[codec(index = 5)]
-    MOONBEAM,
+    MOONBEAM = 5,
     #[codec(index = 6)]
-    ASTAR,
+    ASTAR = 6,
     #[codec(index = 7)]
-    HYPERSPACE,
+    HYPERSPACE = 7,
 }
