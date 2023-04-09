@@ -39,7 +39,7 @@ pub struct POST {
 }
 
 /// The ISMP GET request.
-#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo, Hash)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct GET {
     /// The source state machine of this request.
@@ -59,7 +59,7 @@ pub struct GET {
 }
 
 /// The ISMP request.
-#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo, Hash)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub enum Request {
     /// A post request allows a module on a state machine to send arbitrary bytes to another module

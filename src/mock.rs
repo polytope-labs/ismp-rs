@@ -1,17 +1,15 @@
 use codec::{Decode, Encode};
-use core::borrow::Borrow;
-use std::alloc::System;
 use std::collections::HashMap;
-use std::process::id;
 
 use crate::consensus_client::{
     ConsensusClient, ConsensusClientId, IntermediateState, StateMachineHeight, StateMachineId,
 };
+use crate::router::RequestResponse;
 use crate::{
     consensus_client::StateCommitment,
     error::Error,
     host,
-    router::IISMPRouter,
+    router::ISMPRouter,
     router::{Request, Response},
 };
 
@@ -21,7 +19,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 pub const POLKADOT_CONSENSUS_CLIENT_ID: ConsensusClientId = 300;
 
 #[derive(Debug)]
-pub struct HP {
+pub struct Host {
     pub commits: RefCell<HashMap<StateMachineHeight, StateCommitment>>,
     pub req_commit: RefCell<HashMap<Request, StateCommitment>>,
     pub router: Stage,
@@ -30,7 +28,7 @@ pub struct HP {
     pub latest_height: RefCell<HashMap<StateMachineId, StateMachineHeight>>,
 }
 
-impl host::ISMPHost for HP {
+impl host::ISMPHost for Host {
     fn host(&self) -> host::ChainID {
         host::ChainID::HYPERSPACE
     }
@@ -40,10 +38,7 @@ impl host::ISMPHost for HP {
             return Ok(*height);
         } else {
             Ok(StateMachineHeight {
-                id: StateMachineId {
-                    state_id: 0,
-                    consensus_client: 0,
-                },
+                id: StateMachineId { state_id: 0, consensus_client: 0 },
                 height: 0,
             })
         }
@@ -60,8 +55,12 @@ impl host::ISMPHost for HP {
         }
     }
 
-    fn consensus_update_time(&self, _id: ConsensusClientId) -> Result<Duration, Error> {
-        todo!()
+    fn consensus_update_time(&self, id: ConsensusClientId) -> Result<Duration, Error> {
+        if let Some(client) = self.client.borrow().get(&id) {
+            return Ok(Duration::from_secs(client.timestamp));
+        } else {
+            Err(Error::ImplementationSpecific("Consensus client is non existent".to_string()))
+        }
     }
 
     fn consensus_state(&self, id: ConsensusClientId) -> Result<Vec<u8>, Error> {
@@ -72,10 +71,8 @@ impl host::ISMPHost for HP {
         }
     }
 
-    fn host_timestamp(&self) -> Duration {
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("SystemTime::duration_since failed")
+    fn timestamp(&self) -> Duration {
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
     }
 
     fn is_frozen(&self, height: StateMachineHeight) -> Result<bool, Error> {
@@ -88,22 +85,18 @@ impl host::ISMPHost for HP {
 
     fn request_commitment(&self, req: &Request) -> Result<Vec<u8>, Error> {
         if let Some(commit) = self.req_commit.borrow().get(&req) {
-            return Ok(commit.commitment_root.clone());
+            return Ok(commit.ismp_root.to_vec());
         } else {
             return Err(Error::RequestCommitmentNotFound {
-                nonce: req.nonce,
-                source: req.source_chain,
-                dest: req.dest_chain,
+                nonce: req.nonce(),
+                source: req.source_chain(),
+                dest: req.dest_chain(),
             });
         }
     }
 
     fn store_consensus_state(&self, id: ConsensusClientId, state: Vec<u8>) -> Result<(), Error> {
-        self.client
-            .borrow_mut()
-            .get_mut(&id)
-            .map(|old_state| old_state.state = state)
-            .unwrap();
+        self.client.borrow_mut().get_mut(&id).map(|old_state| old_state.state = state).unwrap();
         Ok(())
     }
 
@@ -159,9 +152,7 @@ impl host::ISMPHost for HP {
             .client
             .borrow()
             .get(&id)
-            .ok_or(Error::ImplementationSpecific(
-                "Client does not exist".to_string(),
-            ))
+            .ok_or(Error::ImplementationSpecific("Client does not exist".to_string()))
             .cloned()
         {
             Ok(val) => Ok(Box::new(val)),
@@ -169,32 +160,39 @@ impl host::ISMPHost for HP {
         }
     }
 
+    fn challenge_period(&self, id: ConsensusClientId) -> Duration {
+        if let Some(client) = self.client.borrow().get(&id) {
+            let (_, _, challenge_period): (Vec<IntermediateState>, bool, Duration) =
+                Decode::decode(&mut client.state.as_ref()).unwrap();
+            challenge_period
+        } else {
+            Duration::from_secs(0)
+        }
+    }
+
     fn keccak256(&self, _bytes: &[u8]) -> [u8; 32] {
         todo!()
     }
 
-    fn delay_period(&self, _id: u64) -> Duration {
-        Duration::from_secs(10 * 60)
-    }
-
-    fn ismp_router(&self) -> Box<dyn IISMPRouter> {
+    fn ismp_router(&self) -> Box<dyn ISMPRouter> {
         Box::new(self.router.clone())
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Polkadot {
-    pub(crate) state: Vec<u8>, // could the state also contain a boolean(frozen state)
+    pub(crate) id: ConsensusClientId,
+    pub(crate) state: Vec<u8>, // includes the frozen state as a boolean and challenge period as Duration
     pub(crate) timestamp: u64,
 }
 impl ConsensusClient for Polkadot {
-    fn verify(
+    fn verify_consensus(
         &self,
         host: &dyn host::ISMPHost,
         trusted_consensus_state: Vec<u8>,
         proof: Vec<u8>,
     ) -> Result<(Vec<u8>, Vec<IntermediateState>), Error> {
-        let states: Vec<IntermediateState> =
+        let (states, _, _): (Vec<IntermediateState>, bool, Duration) =
             Decode::decode(&mut trusted_consensus_state.as_ref()).unwrap();
         let proofs: Vec<IntermediateState> = Decode::decode(&mut proof.as_ref()).unwrap();
         let mut uncommited_state: Vec<IntermediateState> = Vec::new();
@@ -210,57 +208,60 @@ impl ConsensusClient for Polkadot {
         return Ok((encoded, uncommited_state));
     }
 
-    fn consensus_id(&self) -> ConsensusClientId {
-        POLKADOT_CONSENSUS_CLIENT_ID
-    }
-
     fn unbonding_period(&self) -> Duration {
-        todo!()
+        Duration::from_secs(7 * 24 * 60 * 60)
     }
 
     fn verify_membership(
         &self,
-        host: &dyn host::ISMPHost,
-        key: Vec<u8>,
-        commitment: Vec<u8>,
-        proof: &crate::messaging::Proof,
+        _host: &dyn host::ISMPHost,
+        _key: RequestResponse,
+        _commitment: StateCommitment,
+        _proof: &crate::messaging::Proof,
     ) -> Result<(), Error> {
+        todo!()
+    }
+
+    fn verify_state_proof(
+        &self,
+        _host: &dyn host::ISMPHost,
+        _key: Vec<u8>,
+        _root: StateCommitment,
+        _proof: &crate::messaging::Proof,
+    ) -> Result<Vec<u8>, Error> {
         todo!()
     }
 
     fn verify_non_membership(
         &self,
-        host: &dyn host::ISMPHost,
-        key: Vec<u8>,
-        commitment: Vec<u8>,
-        proof: &crate::messaging::Proof,
+        _host: &dyn host::ISMPHost,
+        _key: RequestResponse,
+        _commitment: StateCommitment,
+        _proof: &crate::messaging::Proof,
     ) -> Result<(), Error> {
         todo!()
     }
 
-    fn is_frozen(&self, host: &dyn host::ISMPHost, id: ConsensusClientId) -> Result<bool, Error> {
-        /*
-        match host.consensus_state(id) {
-            Ok(mut state) => {
-                let (_, decoded_bool): (Vec<IntermediateState>, bool) =
-                    Decode::decode(&mut state.as_slice()).unwrap();
-                return Ok(decoded_bool);
-            }
-            Err(e) => Err(e),
+    fn is_frozen(&self, trusted_consensus_state: &[u8]) -> Result<(), Error> {
+        let (_, is_frozen, _): (Vec<IntermediateState>, bool, Duration) =
+            Decode::decode(&mut trusted_consensus_state.as_ref()).unwrap();
+
+        if is_frozen {
+            return Err(Error::FrozenConsensusClient { id: self.id });
+        } else {
+            return Ok(());
         }
-        */
-        todo!()
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Stage;
-impl IISMPRouter for Stage {
-    fn dispatch(&self, request: Request) -> Result<(), Error> {
+impl ISMPRouter for Stage {
+    fn dispatch(&self, _request: Request) -> Result<(), Error> {
         todo!()
     }
 
-    fn write_response(&self, response: Response) -> Result<(), Error> {
+    fn write_response(&self, _response: Response) -> Result<(), Error> {
         todo!()
     }
 }
