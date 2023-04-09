@@ -1,11 +1,12 @@
-use std::collections::HashMap;
-use std::thread;
-use std::time::{Duration, UNIX_EPOCH};
-use std::{cell::RefCell, time::SystemTime};
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    thread,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 use codec::Encode;
 
-use crate::router::POST;
 use crate::{
     consensus_client::{
         ConsensusClientId, IntermediateState, StateCommitment, StateMachineHeight, StateMachineId,
@@ -15,7 +16,7 @@ use crate::{
     host::{ChainID, ISMPHost},
     messaging::{ConsensusMessage, Message},
     mock::{Host, Polkadot, Stage, POLKADOT_CONSENSUS_CLIENT_ID},
-    router::Request,
+    router::{Request, POST},
 };
 
 #[test]

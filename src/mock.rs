@@ -1,20 +1,20 @@
 use codec::{Decode, Encode};
 use std::collections::HashMap;
 
-use crate::consensus_client::{
-    ConsensusClient, ConsensusClientId, IntermediateState, StateMachineHeight, StateMachineId,
-};
-use crate::router::RequestResponse;
 use crate::{
-    consensus_client::StateCommitment,
+    consensus_client::{
+        ConsensusClient, ConsensusClientId, IntermediateState, StateCommitment, StateMachineHeight,
+        StateMachineId,
+    },
     error::Error,
     host,
-    router::ISMPRouter,
-    router::{Request, Response},
+    router::{ISMPRouter, Request, RequestResponse, Response},
 };
 
-use std::cell::RefCell;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::{
+    cell::RefCell,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 pub const POLKADOT_CONSENSUS_CLIENT_ID: ConsensusClientId = 300;
 
@@ -35,7 +35,7 @@ impl host::ISMPHost for Host {
 
     fn latest_commitment_height(&self, id: StateMachineId) -> Result<StateMachineHeight, Error> {
         if let Some(height) = self.latest_height.borrow().get(&id) {
-            return Ok(*height);
+            return Ok(*height)
         } else {
             Ok(StateMachineHeight {
                 id: StateMachineId { state_id: 0, consensus_client: 0 },
@@ -49,7 +49,7 @@ impl host::ISMPHost for Host {
         height: StateMachineHeight,
     ) -> Result<StateCommitment, Error> {
         if let Some(commit) = self.commits.borrow().get(&height) {
-            return Ok(commit.clone());
+            return Ok(commit.clone())
         } else {
             Err(Error::StateCommitmentNotFound { height })
         }
@@ -57,7 +57,7 @@ impl host::ISMPHost for Host {
 
     fn consensus_update_time(&self, id: ConsensusClientId) -> Result<Duration, Error> {
         if let Some(client) = self.client.borrow().get(&id) {
-            return Ok(Duration::from_secs(client.timestamp));
+            return Ok(Duration::from_secs(client.timestamp))
         } else {
             Err(Error::ImplementationSpecific("Consensus client is non existent".to_string()))
         }
@@ -65,7 +65,7 @@ impl host::ISMPHost for Host {
 
     fn consensus_state(&self, id: ConsensusClientId) -> Result<Vec<u8>, Error> {
         if let Some(state) = self.client.borrow().get(&id) {
-            return Ok(state.state.clone());
+            return Ok(state.state.clone())
         } else {
             Err(Error::ConsensusStateNotFound { id })
         }
@@ -77,21 +77,21 @@ impl host::ISMPHost for Host {
 
     fn is_frozen(&self, height: StateMachineHeight) -> Result<bool, Error> {
         if self.frozen.borrow().contains(&height) {
-            return Ok(true);
+            return Ok(true)
         } else {
-            return Ok(false);
+            return Ok(false)
         }
     }
 
     fn request_commitment(&self, req: &Request) -> Result<Vec<u8>, Error> {
         if let Some(commit) = self.req_commit.borrow().get(&req) {
-            return Ok(commit.ismp_root.to_vec());
+            return Ok(commit.ismp_root.to_vec())
         } else {
             return Err(Error::RequestCommitmentNotFound {
                 nonce: req.nonce(),
                 source: req.source_chain(),
                 dest: req.dest_chain(),
-            });
+            })
         }
     }
 
@@ -182,7 +182,8 @@ impl host::ISMPHost for Host {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Polkadot {
     pub(crate) id: ConsensusClientId,
-    pub(crate) state: Vec<u8>, // includes the frozen state as a boolean and challenge period as Duration
+    pub(crate) state: Vec<u8>, /* includes the frozen state as a boolean and challenge period as
+                                * Duration */
     pub(crate) timestamp: u64,
 }
 impl ConsensusClient for Polkadot {
@@ -197,7 +198,8 @@ impl ConsensusClient for Polkadot {
         let proofs: Vec<IntermediateState> = Decode::decode(&mut proof.as_ref()).unwrap();
         let mut uncommited_state: Vec<IntermediateState> = Vec::new();
 
-        // if the key already exists in the statemachine commit then discard it from the consensus client.
+        // if the key already exists in the statemachine commit then discard it from the consensus
+        // client.
         for state in states {
             if !host.state_machine_commitment(state.height).is_ok() {
                 uncommited_state.push(state);
@@ -205,7 +207,7 @@ impl ConsensusClient for Polkadot {
         }
         uncommited_state.extend(proofs);
         let encoded: Vec<u8> = uncommited_state.encode();
-        return Ok((encoded, uncommited_state));
+        return Ok((encoded, uncommited_state))
     }
 
     fn unbonding_period(&self) -> Duration {
@@ -247,9 +249,9 @@ impl ConsensusClient for Polkadot {
             Decode::decode(&mut trusted_consensus_state.as_ref()).unwrap();
 
         if is_frozen {
-            return Err(Error::FrozenConsensusClient { id: self.id });
+            return Err(Error::FrozenConsensusClient { id: self.id })
         } else {
-            return Ok(());
+            return Ok(())
         }
     }
 }
