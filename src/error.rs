@@ -54,6 +54,11 @@ pub enum Error {
         source: ChainID,
         dest: ChainID,
     },
+    RequestTimeoutVerificationFailed {
+        nonce: u64,
+        source: ChainID,
+        dest: ChainID,
+    },
     ResponseVerificationFailed {
         nonce: u64,
         source: ChainID,

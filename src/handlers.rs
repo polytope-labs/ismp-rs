@@ -26,6 +26,7 @@ use alloc::{boxed::Box, collections::BTreeSet};
 mod consensus;
 mod request;
 mod response;
+mod timeout;
 
 pub struct ConsensusUpdateResult {
     /// Consensus client Id
@@ -48,6 +49,7 @@ pub enum MessageResult {
     ConsensusMessage(ConsensusUpdateResult),
     Request(RequestResponseResult),
     Response(RequestResponseResult),
+    Timeout(RequestResponseResult),
 }
 
 /// This function serves as an entry point to handle the message types provided by the ISMP protocol
@@ -60,6 +62,7 @@ pub fn handle_incoming_message(
         Message::Consensus(consensus_message) => consensus::handle(host, consensus_message),
         Message::Request(req) => request::handle(host, req),
         Message::Response(resp) => response::handle(host, resp),
+        Message::Timeout(timeout) => timeout::handle(host, timeout),
         _ => Err(Error::CannotHandleConsensusMessage),
     }
 }
