@@ -57,7 +57,6 @@ pub enum MessageResult {
 }
 
 /// This function serves as an entry point to handle the message types provided by the ISMP protocol
-/// Does not handle create consensus client message.
 pub fn handle_incoming_message(
     host: &dyn ISMPHost,
     message: Message,
@@ -69,7 +68,6 @@ pub fn handle_incoming_message(
         Message::CreateConsensusClient(create_consensus_client_message) => {
             consensus::create_consensus_client(host, create_consensus_client_message)
         }
-        _ => Err(Error::CannotHandleConsensusMessage),
     }
 }
 
