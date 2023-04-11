@@ -34,6 +34,11 @@ pub struct ConsensusUpdateResult {
     pub state_updates: BTreeSet<(StateMachineHeight, StateMachineHeight)>,
 }
 
+pub struct ConsensusClientCreatedResult {
+    /// Consensus client Id
+    pub consensus_client_id: ConsensusClientId,
+}
+
 pub struct RequestResponseResult {
     /// Destination chain for request or response
     pub dest_chain: ChainID,
@@ -48,6 +53,7 @@ pub enum MessageResult {
     ConsensusMessage(ConsensusUpdateResult),
     Request(RequestResponseResult),
     Response(RequestResponseResult),
+    ConsensusClientCreated(ConsensusClientCreatedResult),
 }
 
 /// This function serves as an entry point to handle the message types provided by the ISMP protocol
@@ -60,31 +66,10 @@ pub fn handle_incoming_message(
         Message::Consensus(consensus_message) => consensus::handle(host, consensus_message),
         Message::Request(req) => request::handle(host, req),
         Message::Response(resp) => response::handle(host, resp),
-        _ => Err(Error::CannotHandleConsensusMessage),
-    }
-}
-
-/// Create a consensus client
-pub fn create_consensus_client(host: &dyn ISMPHost, message: Message) -> Result<(), Error> {
-    match message {
         Message::CreateConsensusClient(create_consensus_client_message) => {
-            // Store the initial state for the consensus client
-            host.store_consensus_state(
-                create_consensus_client_message.consensus_client_id,
-                create_consensus_client_message.consensus_state,
-            )?;
-
-            // Store all intermedite state machine commitments
-            for intermediate_state in create_consensus_client_message.state_machine_commitments {
-                host.store_state_machine_commitment(
-                    intermediate_state.height,
-                    intermediate_state.commitment,
-                )?;
-            }
-
-            Ok(())
+            consensus::create_consensus_client(host, create_consensus_client_message)
         }
-        _ => Err(Error::InvalidMessage),
+        _ => Err(Error::CannotHandleConsensusMessage),
     }
 }
 
