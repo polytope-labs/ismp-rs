@@ -69,9 +69,8 @@ pub fn handle_incoming_message(
         Message::Response(resp) => response::handle(host, resp),
         Message::CreateConsensusClient(create_consensus_client_message) => {
             consensus::create_consensus_client(host, create_consensus_client_message)
-        },
+        }
         Message::Timeout(timeout) => timeout::handle(host, timeout),
-        _ => Err(Error::CannotHandleConsensusMessage),
     }
 }
 
