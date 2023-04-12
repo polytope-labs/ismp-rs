@@ -35,6 +35,11 @@ pub struct ConsensusUpdateResult {
     pub state_updates: BTreeSet<(StateMachineHeight, StateMachineHeight)>,
 }
 
+pub struct ConsensusClientCreatedResult {
+    /// Consensus client Id
+    pub consensus_client_id: ConsensusClientId,
+}
+
 pub struct RequestResponseResult {
     /// Destination chain for request or response
     pub dest_chain: ChainID,
@@ -49,11 +54,11 @@ pub enum MessageResult {
     ConsensusMessage(ConsensusUpdateResult),
     Request(RequestResponseResult),
     Response(RequestResponseResult),
+    ConsensusClientCreated(ConsensusClientCreatedResult),
     Timeout(RequestResponseResult),
 }
 
 /// This function serves as an entry point to handle the message types provided by the ISMP protocol
-/// Does not handle create consensus client message.
 pub fn handle_incoming_message(
     host: &dyn ISMPHost,
     message: Message,
@@ -62,6 +67,9 @@ pub fn handle_incoming_message(
         Message::Consensus(consensus_message) => consensus::handle(host, consensus_message),
         Message::Request(req) => request::handle(host, req),
         Message::Response(resp) => response::handle(host, resp),
+        Message::CreateConsensusClient(create_consensus_client_message) => {
+            consensus::create_consensus_client(host, create_consensus_client_message)
+        },
         Message::Timeout(timeout) => timeout::handle(host, timeout),
         _ => Err(Error::CannotHandleConsensusMessage),
     }
