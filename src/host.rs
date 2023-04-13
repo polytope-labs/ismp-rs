@@ -94,8 +94,8 @@ pub trait ISMPHost {
         buf.extend_from_slice(&source_chain);
         buf.extend_from_slice(&dest_chain);
         buf.extend_from_slice(&nonce);
-        buf.extend_from_slice(&req.data);
         buf.extend_from_slice(&timestamp);
+        buf.extend_from_slice(&req.data);
         buf.extend_from_slice(&req.from);
         buf.extend_from_slice(&req.to);
         self.keccak256(&buf[..]).to_vec()
@@ -119,6 +119,7 @@ pub trait ISMPHost {
         buf.extend_from_slice(&source_chain);
         buf.extend_from_slice(&dest_chain);
         buf.extend_from_slice(&nonce);
+        buf.extend_from_slice(&timestamp);
         buf.extend_from_slice(&req.data);
         buf.extend_from_slice(&req.from);
         buf.extend_from_slice(&req.to);
