@@ -34,14 +34,14 @@ pub fn handle(host: &dyn ISMPHost, msg: TimeoutMessage) -> Result<MessageResult,
         })
     }
 
-    let now = host.timestamp();
     let state = host.state_machine_commitment(msg.timeout_proof.height)?;
-
-    if now.as_secs() <= state.timestamp {
-        Err(Error::RequestTimeoutVerificationFailed {
+    if !msg.request.timed_out(state.timestamp()) {
+        Err(Error::RequestTimeoutNotElapsed {
             nonce: msg.request.nonce(),
             source: msg.request.source_chain(),
             dest: msg.request.dest_chain(),
+            timeout_timestamp: msg.request.timeout(),
+            state_machine_time: state.timestamp(),
         })?
     }
 
