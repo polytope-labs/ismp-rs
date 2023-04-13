@@ -20,6 +20,7 @@ use crate::{
     handlers::{validate_state_machine, MessageResult, RequestResponseResult},
     host::ISMPHost,
     messaging::TimeoutMessage,
+    router::RequestResponse,
 };
 
 /// This function handles timeouts for Requests
@@ -45,18 +46,21 @@ pub fn handle(host: &dyn ISMPHost, msg: TimeoutMessage) -> Result<MessageResult,
         })?
     }
 
-    let key = host.get_request_commitment(&msg.request);
-
-    consensus_client.verify_state_proof(host, key, state, &msg.timeout_proof)?;
-
-    let router = host.ismp_router();
-    router.dispatch_timeout(msg.request.clone())?;
+    consensus_client.verify_non_membership(
+        host,
+        RequestResponse::Request(msg.request.clone()),
+        state,
+        &msg.timeout_proof,
+    )?;
 
     let result = RequestResponseResult {
         dest_chain: msg.request.source_chain(),
         source_chain: msg.request.dest_chain(),
         nonce: msg.request.nonce(),
     };
+
+    let router = host.ismp_router();
+    router.dispatch_timeout(msg.request)?;
 
     Ok(MessageResult::Timeout(result))
 }
