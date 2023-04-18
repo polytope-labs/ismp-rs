@@ -13,6 +13,7 @@ derive_more = { version = "0.99.17", default-features = false, features = ["from
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 serde = { version = "1.0.136", features = ["derive"], optional = true }
 primitive-types = { version = "0.12.1", default-features = false }
+keccak-hash = "0.10.0"
 
 [features]
 default = ["std"]
@@ -22,3 +23,4 @@ std = [
     "serde",
     "primitive-types/std"
 ]
+ismp_rs_tests = ["std"]
