@@ -27,7 +27,7 @@ use alloc::boxed::Box;
 use codec::{Decode, Encode};
 use core::time::Duration;
 use derive_more::Display;
-use primitive_types::{H256, U256};
+use primitive_types::H256;
 
 pub trait ISMPHost {
     fn host(&self) -> ChainID;
@@ -83,14 +83,11 @@ pub trait ISMPHost {
         };
 
         let mut buf = Vec::new();
-        let mut source_chain = [0u8; 32];
-        let mut dest_chain = [0u8; 32];
-        let mut nonce = [0u8; 32];
-        let mut timestamp = [0u8; 32];
-        U256::from(req.source_chain as u8).to_big_endian(&mut source_chain);
-        U256::from(req.dest_chain as u8).to_big_endian(&mut dest_chain);
-        U256::from(req.nonce).to_big_endian(&mut nonce);
-        U256::from(req.timeout_timestamp).to_big_endian(&mut timestamp);
+
+        let source_chain = (req.source_chain as u8).to_be_bytes();
+        let dest_chain = (req.dest_chain as u8).to_be_bytes();
+        let nonce = req.nonce.to_be_bytes();
+        let timestamp = req.timeout_timestamp.to_be_bytes();
         buf.extend_from_slice(&source_chain);
         buf.extend_from_slice(&dest_chain);
         buf.extend_from_slice(&nonce);
@@ -108,14 +105,10 @@ pub trait ISMPHost {
             _ => unimplemented!(),
         };
         let mut buf = Vec::new();
-        let mut source_chain = [0u8; 32];
-        let mut dest_chain = [0u8; 32];
-        let mut nonce = [0u8; 32];
-        let mut timestamp = [0u8; 32];
-        U256::from(req.source_chain as u8).to_big_endian(&mut source_chain);
-        U256::from(req.dest_chain as u8).to_big_endian(&mut dest_chain);
-        U256::from(req.nonce as u8).to_big_endian(&mut nonce);
-        U256::from(req.timeout_timestamp).to_big_endian(&mut timestamp);
+        let source_chain = (req.source_chain as u8).to_be_bytes();
+        let dest_chain = (req.dest_chain as u8).to_be_bytes();
+        let nonce = req.nonce.to_be_bytes();
+        let timestamp = req.timeout_timestamp.to_be_bytes();
         buf.extend_from_slice(&source_chain);
         buf.extend_from_slice(&dest_chain);
         buf.extend_from_slice(&nonce);

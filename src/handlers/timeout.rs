@@ -48,12 +48,7 @@ pub fn handle(host: &dyn ISMPHost, msg: TimeoutMessage) -> Result<MessageResult,
 
     let key = consensus_client.state_trie_key(RequestResponse::Request(msg.request.clone()));
 
-    let request = consensus_client.verify_state_proof(
-        host,
-        key,
-        state,
-        &msg.timeout_proof,
-    )?;
+    let request = consensus_client.verify_state_proof(host, key, state, &msg.timeout_proof)?;
 
     if request.is_some() {
         Err(Error::ImplementationSpecific("Request not timed out".into()))?
