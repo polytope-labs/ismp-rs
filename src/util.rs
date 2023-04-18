@@ -1,8 +1,9 @@
-use primitive_types::H256;
-use crate::host::ISMPHost;
-use crate::router::{Request, Response};
+use crate::{
+    host::ISMPHost,
+    router::{Request, Response},
+};
 use alloc::vec::Vec;
-
+use primitive_types::H256;
 
 /// Return the keccak256 hash of a request
 /// Commitment is the hash of the concatenation of the data below

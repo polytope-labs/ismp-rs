@@ -78,7 +78,9 @@ pub trait ISMPHost {
 
     // Hashing
     /// Returns a keccak256 hash of a byte slice
-    fn keccak256(bytes: &[u8]) -> H256 where Self: Sized;
+    fn keccak256(bytes: &[u8]) -> H256
+    where
+        Self: Sized;
 
     /// Returns the configured delay period for a consensus client
     fn challenge_period(&self, id: ConsensusClientId) -> Duration;
