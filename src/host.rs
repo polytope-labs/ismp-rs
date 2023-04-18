@@ -21,7 +21,7 @@ use crate::{
     },
     error::Error,
     prelude::Vec,
-    router::{ISMPRouter, Request, Response},
+    router::{ISMPRouter, Request},
 };
 use alloc::boxed::Box;
 use codec::{Decode, Encode};
@@ -73,59 +73,12 @@ pub trait ISMPHost {
     /// Store latest height for a state machine
     fn store_latest_commitment_height(&self, height: StateMachineHeight) -> Result<(), Error>;
 
-    /// Return the keccak256 hash of a request
-    /// Commitment is the hash of the concatenation of the data below
-    /// request.source_chain + request.dest_chain + request.nonce + request.data
-    fn get_request_commitment(&self, req: &Request) -> H256 {
-        let req = match req {
-            Request::Post(post) => post,
-            _ => unimplemented!(),
-        };
-
-        let mut buf = Vec::new();
-
-        let source_chain = (req.source_chain as u8).to_be_bytes();
-        let dest_chain = (req.dest_chain as u8).to_be_bytes();
-        let nonce = req.nonce.to_be_bytes();
-        let timestamp = req.timeout_timestamp.to_be_bytes();
-        buf.extend_from_slice(&source_chain);
-        buf.extend_from_slice(&dest_chain);
-        buf.extend_from_slice(&nonce);
-        buf.extend_from_slice(&timestamp);
-        buf.extend_from_slice(&req.data);
-        buf.extend_from_slice(&req.from);
-        buf.extend_from_slice(&req.to);
-        self.keccak256(&buf[..])
-    }
-
-    /// Return the keccak256 of a response
-    fn get_response_commitment(&self, res: &Response) -> H256 {
-        let req = match res.request {
-            Request::Post(ref post) => post,
-            _ => unimplemented!(),
-        };
-        let mut buf = Vec::new();
-        let source_chain = (req.source_chain as u8).to_be_bytes();
-        let dest_chain = (req.dest_chain as u8).to_be_bytes();
-        let nonce = req.nonce.to_be_bytes();
-        let timestamp = req.timeout_timestamp.to_be_bytes();
-        buf.extend_from_slice(&source_chain);
-        buf.extend_from_slice(&dest_chain);
-        buf.extend_from_slice(&nonce);
-        buf.extend_from_slice(&timestamp);
-        buf.extend_from_slice(&req.data);
-        buf.extend_from_slice(&req.from);
-        buf.extend_from_slice(&req.to);
-        buf.extend_from_slice(&res.response);
-        self.keccak256(&buf[..])
-    }
-
     /// Should return a handle to the consensus client based on the id
     fn consensus_client(&self, id: ConsensusClientId) -> Result<Box<dyn ConsensusClient>, Error>;
 
     // Hashing
     /// Returns a keccak256 hash of a byte slice
-    fn keccak256(&self, bytes: &[u8]) -> H256;
+    fn keccak256(bytes: &[u8]) -> H256 where Self: Sized;
 
     /// Returns the configured delay period for a consensus client
     fn challenge_period(&self, id: ConsensusClientId) -> Duration;
