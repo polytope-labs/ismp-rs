@@ -27,7 +27,7 @@ use alloc::boxed::Box;
 use codec::{Decode, Encode};
 use core::time::Duration;
 use derive_more::Display;
-use primitive_types::U256;
+use primitive_types::{H256, U256};
 
 pub trait ISMPHost {
     fn host(&self) -> ChainID;
@@ -50,7 +50,7 @@ pub trait ISMPHost {
     /// Checks if a state machine is frozen at the provided height
     fn is_frozen(&self, height: StateMachineHeight) -> Result<bool, Error>;
     /// Fetch commitment of a request from storage
-    fn request_commitment(&self, req: &Request) -> Result<Vec<u8>, Error>;
+    fn request_commitment(&self, req: &Request) -> Result<H256, Error>;
 
     // Storage Write functions
 
@@ -76,7 +76,7 @@ pub trait ISMPHost {
     /// Return the keccak256 hash of a request
     /// Commitment is the hash of the concatenation of the data below
     /// request.source_chain + request.dest_chain + request.nonce + request.data
-    fn get_request_commitment(&self, req: &Request) -> Vec<u8> {
+    fn get_request_commitment(&self, req: &Request) -> H256 {
         let req = match req {
             Request::Post(post) => post,
             _ => unimplemented!(),
@@ -98,11 +98,11 @@ pub trait ISMPHost {
         buf.extend_from_slice(&req.data);
         buf.extend_from_slice(&req.from);
         buf.extend_from_slice(&req.to);
-        self.keccak256(&buf[..]).to_vec()
+        self.keccak256(&buf[..])
     }
 
     /// Return the keccak256 of a response
-    fn get_response_commitment(&self, res: &Response) -> Vec<u8> {
+    fn get_response_commitment(&self, res: &Response) -> H256 {
         let req = match res.request {
             Request::Post(ref post) => post,
             _ => unimplemented!(),
@@ -124,7 +124,7 @@ pub trait ISMPHost {
         buf.extend_from_slice(&req.from);
         buf.extend_from_slice(&req.to);
         buf.extend_from_slice(&res.response);
-        self.keccak256(&buf[..]).to_vec()
+        self.keccak256(&buf[..])
     }
 
     /// Should return a handle to the consensus client based on the id
@@ -132,7 +132,7 @@ pub trait ISMPHost {
 
     // Hashing
     /// Returns a keccak256 hash of a byte slice
-    fn keccak256(&self, bytes: &[u8]) -> [u8; 32];
+    fn keccak256(&self, bytes: &[u8]) -> H256;
 
     /// Returns the configured delay period for a consensus client
     fn challenge_period(&self, id: ConsensusClientId) -> Duration;
