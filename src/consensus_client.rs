@@ -22,7 +22,8 @@ use codec::{Decode, Encode};
 use core::time::Duration;
 use primitive_types::H256;
 
-pub type ConsensusClientId = u64;
+/// Consensus client Ids
+pub type ConsensusClientId = [u8; 4];
 
 #[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
