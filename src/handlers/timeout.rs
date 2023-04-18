@@ -21,13 +21,13 @@ use crate::{
     host::ISMPHost,
     messaging::TimeoutMessage,
     router::RequestResponse,
+    util::hash_request,
 };
-use crate::util::hash_request;
 
 /// This function handles timeouts for Requests
 pub fn handle<H>(host: &H, msg: TimeoutMessage) -> Result<MessageResult, Error>
-    where
-        H: ISMPHost,
+where
+    H: ISMPHost,
 {
     let consensus_client = validate_state_machine(host, &msg.timeout_proof)?;
     let commitment = host.request_commitment(&msg.request)?;

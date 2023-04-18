@@ -21,13 +21,13 @@ use crate::{
     host::ISMPHost,
     messaging::ResponseMessage,
     router::RequestResponse,
+    util::hash_request,
 };
-use crate::util::hash_request;
 
 /// Validate the state machine, verify the response message and dispatch the message to the router
 pub fn handle<H>(host: &H, msg: ResponseMessage) -> Result<MessageResult, Error>
-    where
-        H: ISMPHost,
+where
+    H: ISMPHost,
 {
     let consensus_client = validate_state_machine(host, &msg.proof)?;
     // For a response to be valid a request commitment must be present in storage

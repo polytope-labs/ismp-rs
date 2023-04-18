@@ -25,8 +25,8 @@ use crate::{
 
 /// Validate the state machine, verify the request message and dispatch the message to the router
 pub fn handle<H>(host: &H, msg: RequestMessage) -> Result<MessageResult, Error>
-    where
-        H: ISMPHost,
+where
+    H: ISMPHost,
 {
     let consensus_client = validate_state_machine(host, &msg.proof)?;
     // Verify membership proof
