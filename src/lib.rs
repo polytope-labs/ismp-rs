@@ -31,6 +31,7 @@ pub mod messaging;
 pub mod module;
 pub mod router;
 pub mod ismp_rs_tests;
+pub mod util;
 
 pub mod prelude {
     pub use alloc::{format, str::FromStr, string::String, vec, vec::Vec};

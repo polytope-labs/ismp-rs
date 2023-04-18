@@ -94,9 +94,7 @@ impl ISMPHost for Dummy {
         }
     }
 
-    fn request_commitment(&self, req: &crate::router::Request) -> Result<Vec<u8>, Error> {
-        todo!()
-    }
+   
 
     fn store_consensus_state(
         &self,
@@ -151,18 +149,11 @@ impl ISMPHost for Dummy {
         todo!()
     }
 
-    fn keccak256(&self, bytes: &[u8]) -> [u8; 32] {
-        keccak(bytes).into()
-    }
-
     fn challenge_period(
         &self,
         id: crate::consensus_client::ConsensusClientId,
     ) -> core::time::Duration {
-          match id {
-            id if id == ETHEREUM_CONSENSUS_CLIENT_ID => Duration::from_secs(30 * 60),
-            _ => Duration::from_secs(15 * 60),
-        }
+        todo!()
     }
 
     fn ismp_router(&self) -> Box<dyn crate::router::ISMPRouter> {
@@ -170,6 +161,16 @@ impl ISMPHost for Dummy {
     }
 
     fn consensus_update_time(&self, id: ConsensusClientId) -> Result<core::time::Duration, Error> {
+        todo!()
+    }
+
+    fn keccak256(bytes: &[u8]) -> keccak_hash::H256
+    where
+        Self: Sized {
+        todo!()
+    }
+
+    fn request_commitment(&self, req: &crate::router::Request) -> Result<keccak_hash::H256, Error> {
         todo!()
     }
 }
