@@ -11,31 +11,38 @@ use alloc::rc::Rc;
 
 use crate::{
     consensus_client::{
-        ConsensusClientId, IntermediateState, StateCommitment, StateMachineHeight, StateMachineId,
+        ConsensusClient, ConsensusClientId, IntermediateState, StateCommitment, StateMachineHeight,
+        StateMachineId,
     },
     error::Error,
     handlers::{MessageResult, RequestResponseResult},
-    host::{ ISMPHost, StateMachine},
+    host::{ISMPHost, StateMachine},
     messaging::RequestMessage,
-    router::{RequestResponse, ISMPRouter},
+    router::{ISMPRouter, RequestResponse},
 };
 
 pub type Hash = [u8; 32];
 pub const ETHEREUM_CONSENSUS_CLIENT_ID: u64 = 1;
 
 #[derive(Debug, Clone)]
-struct Dummy {
+struct DummyHost {
     storage_state_machine: Rc<RefCell<HashMap<StateMachineHeight, StateCommitment>>>,
     storage_consensus: Rc<RefCell<HashMap<ConsensusClientId, Vec<u8>>>>,
     storage_latest_state_machine: Rc<RefCell<HashMap<StateMachineId, StateMachineHeight>>>,
     frozen_machine_height: Rc<RefCell<HashMap<StateMachineHeight, bool>>>,
     frozen_consensus: Rc<RefCell<HashMap<ConsensusClientId, bool>>>,
     updated_consensus_timestamp: Rc<RefCell<HashMap<ConsensusClientId, Duration>>>,
-	state_machine_id: StateMachine,
+    state_machine_id: StateMachine,
 }
 
-impl<> ISMPHost for Dummy {
-     fn host_state_machine(&self) -> crate::host::StateMachine {
+struct DummyClient {
+    id: ConsensusClientId,
+    state: IntermediateState,
+    host: DummyHost,
+}
+
+impl ISMPHost for DummyHost {
+    fn host_state_machine(&self) -> crate::host::StateMachine {
         self.state_machine_id
     }
 
@@ -155,25 +162,23 @@ impl<> ISMPHost for Dummy {
         id: crate::consensus_client::ConsensusClientId,
     ) -> Result<Box<dyn crate::consensus_client::ConsensusClient>, Error> {
         // self.storage_consensus
-		// 	.borrow()
-		// 	.get(&id)
-		// 	.cloned()
-		// 	.ok_or(Error::ConsensusStateNotFound { id })
-		// 	.map(|consensus| Box::new(consensus) as Box<dyn crate::consensus_client::ConsensusClient>)
-		todo!()
-	}
-    
+        // 	.borrow()
+        // 	.get(&id)
+        // 	.cloned()
+        // 	.ok_or(Error::ConsensusStateNotFound { id })
+        // 	.map(|consensus| Box::new(consensus) as Box<dyn crate::consensus_client::ConsensusClient>)
+        todo!()
+    }
 
     fn challenge_period(
         &self,
         id: crate::consensus_client::ConsensusClientId,
     ) -> core::time::Duration {
         match id {
-			id if id == ETHEREUM_CONSENSUS_CLIENT_ID => Duration::from_secs(60),
-			_ => Duration::from_secs(20),
-		}
-	}
-    
+            id if id == ETHEREUM_CONSENSUS_CLIENT_ID => Duration::from_secs(60),
+            _ => Duration::from_secs(20),
+        }
+    }
 
     fn ismp_router(&self) -> Box<dyn crate::router::ISMPRouter> {
         todo!()
@@ -204,8 +209,55 @@ impl<> ISMPHost for Dummy {
 
         Ok(())
     }
+}
 
-   
+impl DummyClient {
+    fn new(id: ConsensusClientId, state: IntermediateState, host: DummyHost) -> Self {
+        Self { id, state, host }
+    }
+}
+
+impl ConsensusClient for DummyClient {
+    fn unbonding_period(&self) -> core::time::Duration {
+        Duration::from_secs(60)
+    }
+
+    fn verify_consensus(
+        &self,
+        host: &dyn ISMPHost,
+        trusted_consensus_state: Vec<u8>,
+        proof: Vec<u8>,
+    ) -> Result<(Vec<u8>, Vec<IntermediateState>), Error> {
+        todo!()
+    }
+
+    fn verify_membership(
+        &self,
+        host: &dyn ISMPHost,
+        item: RequestResponse,
+        root: StateCommitment,
+        proof: &crate::messaging::Proof,
+    ) -> Result<(), Error> {
+        todo!()
+    }
+
+    fn state_trie_key(&self, request: RequestResponse) -> Vec<u8> {
+        todo!()
+    }
+
+    fn verify_state_proof(
+        &self,
+        host: &dyn ISMPHost,
+        key: Vec<u8>,
+        root: StateCommitment,
+        proof: &crate::messaging::Proof,
+    ) -> Result<Option<Vec<u8>>, Error> {
+        todo!()
+    }
+
+    fn is_frozen(&self, trusted_consensus_state: &[u8]) -> Result<(), Error> {
+        todo!()
+    }
 }
 
 #[cfg(test)]
