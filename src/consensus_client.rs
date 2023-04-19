@@ -16,14 +16,18 @@
 //! Consensus client definitions
 
 use crate::{
-    error::Error, host::ISMPHost, messaging::Proof, prelude::Vec, router::RequestResponse,
+    error::Error,
+    host::{ISMPHost, StateMachine},
+    messaging::Proof,
+    prelude::Vec,
+    router::RequestResponse,
 };
 use codec::{Decode, Encode};
 use core::time::Duration;
 use primitive_types::H256;
 
 /// Consensus client Ids
-pub type ConsensusClientId = [u8; 4];
+pub type ConsensusClientId = u64; // changed this from `[u8; 4]` to `u64` to make it easier to use in the runtime
 
 #[derive(Debug, Clone, Encode, Decode, Hash, scale_info::TypeInfo, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
@@ -57,7 +61,7 @@ pub struct IntermediateState {
 )]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct StateMachineId {
-    pub state_id: u64,
+    pub state_id: StateMachine,
     pub consensus_client: ConsensusClientId,
 }
 

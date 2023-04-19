@@ -3,9 +3,9 @@ use core::{
     fmt::Debug,
     time::{self, Duration},
 };
+use keccak_hash::keccak;
 use std::collections::HashMap;
 use std::time::SystemTime;
-use  keccak_hash::keccak;
 
 use alloc::rc::Rc;
 
@@ -15,9 +15,9 @@ use crate::{
     },
     error::Error,
     handlers::{MessageResult, RequestResponseResult},
-    host::{ChainID, ISMPHost},
+    host::{ ISMPHost, StateMachine},
     messaging::RequestMessage,
-    router::RequestResponse,
+    router::{RequestResponse, ISMPRouter},
 };
 
 pub type Hash = [u8; 32];
@@ -30,12 +30,13 @@ struct Dummy {
     storage_latest_state_machine: Rc<RefCell<HashMap<StateMachineId, StateMachineHeight>>>,
     frozen_machine_height: Rc<RefCell<HashMap<StateMachineHeight, bool>>>,
     frozen_consensus: Rc<RefCell<HashMap<ConsensusClientId, bool>>>,
-    chain_id: ChainID,
+    updated_consensus_timestamp: Rc<RefCell<HashMap<ConsensusClientId, Duration>>>,
+	state_machine_id: StateMachine,
 }
 
-impl ISMPHost for Dummy {
-    fn host(&self) -> crate::host::ChainID {
-        self.chain_id
+impl<> ISMPHost for Dummy {
+     fn host_state_machine(&self) -> crate::host::StateMachine {
+        self.state_machine_id
     }
 
     fn latest_commitment_height(
@@ -94,14 +95,14 @@ impl ISMPHost for Dummy {
         }
     }
 
-   
-
     fn store_consensus_state(
         &self,
         id: crate::consensus_client::ConsensusClientId,
         state: Vec<u8>,
     ) -> Result<(), Error> {
-		self.storage_consensus.borrow_mut().insert(id.clone(), state);
+        self.storage_consensus
+            .borrow_mut()
+            .insert(id.clone(), state);
 
         Ok(())
     }
@@ -111,7 +112,10 @@ impl ISMPHost for Dummy {
         id: crate::consensus_client::ConsensusClientId,
         timestamp: core::time::Duration,
     ) -> Result<(), Error> {
-        todo!()
+        self.updated_consensus_timestamp
+            .borrow_mut()
+            .insert(id.clone(), timestamp);
+        Ok(())
     }
 
     fn store_state_machine_commitment(
@@ -129,7 +133,11 @@ impl ISMPHost for Dummy {
         &self,
         height: crate::consensus_client::StateMachineHeight,
     ) -> Result<(), Error> {
-        todo!()
+        self.frozen_machine_height
+            .borrow_mut()
+            .insert(height.clone(), true);
+
+        Ok(())
     }
 
     fn store_latest_commitment_height(
@@ -146,15 +154,26 @@ impl ISMPHost for Dummy {
         &self,
         id: crate::consensus_client::ConsensusClientId,
     ) -> Result<Box<dyn crate::consensus_client::ConsensusClient>, Error> {
-        todo!()
-    }
+        // self.storage_consensus
+		// 	.borrow()
+		// 	.get(&id)
+		// 	.cloned()
+		// 	.ok_or(Error::ConsensusStateNotFound { id })
+		// 	.map(|consensus| Box::new(consensus) as Box<dyn crate::consensus_client::ConsensusClient>)
+		todo!()
+	}
+    
 
     fn challenge_period(
         &self,
         id: crate::consensus_client::ConsensusClientId,
     ) -> core::time::Duration {
-        todo!()
-    }
+        match id {
+			id if id == ETHEREUM_CONSENSUS_CLIENT_ID => Duration::from_secs(60),
+			_ => Duration::from_secs(20),
+		}
+	}
+    
 
     fn ismp_router(&self) -> Box<dyn crate::router::ISMPRouter> {
         todo!()
@@ -166,17 +185,30 @@ impl ISMPHost for Dummy {
 
     fn keccak256(bytes: &[u8]) -> keccak_hash::H256
     where
-        Self: Sized {
+        Self: Sized,
+    {
         todo!()
     }
 
     fn request_commitment(&self, req: &crate::router::Request) -> Result<keccak_hash::H256, Error> {
         todo!()
     }
+
+    fn is_expired(&self, consensus_id: ConsensusClientId) -> Result<(), Error> {
+        let host_timestamp = self.timestamp();
+        let unbonding_period = self.consensus_client(consensus_id)?.unbonding_period();
+        let last_update = self.consensus_update_time(consensus_id)?;
+        if host_timestamp.saturating_sub(last_update) > unbonding_period {
+            Err(Error::UnbondingPeriodElapsed { consensus_id })?
+        }
+
+        Ok(())
+    }
+
+   
 }
 
-
-
+#[cfg(test)]
 #[cfg(feature = "ismp_rs_tests")]
 #[test]
 //Test function that checks that the challenge period is elapsed before a new consensus update is allowed
