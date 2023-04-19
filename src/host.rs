@@ -154,19 +154,17 @@ impl FromStr for StateMachine {
             "BASE" => StateMachine::Base,
             name if name.starts_with("POLKADOT-") => {
                 let id = name
-                    .split("-")
+                    .split('-')
                     .last()
-                    .map(|id| u32::from_str(id).ok())
-                    .flatten()
+                    .and_then(|id| u32::from_str(id).ok())
                     .ok_or_else(|| format!("invalid state machine: {name}"))?;
                 StateMachine::Polkadot(id)
             }
             name if name.starts_with("KUSAMA-") => {
                 let id = name
-                    .split("-")
+                    .split('-')
                     .last()
-                    .map(|id| u32::from_str(id).ok())
-                    .flatten()
+                    .and_then(|id| u32::from_str(id).ok())
                     .ok_or_else(|| format!("invalid state machine: {name}"))?;
                 StateMachine::Kusama(id)
             }

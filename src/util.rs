@@ -20,8 +20,8 @@ pub fn hash_request<H: ISMPHost>(req: &Request) -> H256 {
     let dest_chain = req.dest_chain.to_string();
     let nonce = req.nonce.to_be_bytes();
     let timestamp = req.timeout_timestamp.to_be_bytes();
-    buf.extend_from_slice(&source_chain.as_bytes());
-    buf.extend_from_slice(&dest_chain.as_bytes());
+    buf.extend_from_slice(source_chain.as_bytes());
+    buf.extend_from_slice(dest_chain.as_bytes());
     buf.extend_from_slice(&nonce);
     buf.extend_from_slice(&timestamp);
     buf.extend_from_slice(&req.data);
@@ -41,8 +41,8 @@ pub fn hash_response<H: ISMPHost>(res: &Response) -> H256 {
     let dest_chain = req.dest_chain.to_string();
     let nonce = req.nonce.to_be_bytes();
     let timestamp = req.timeout_timestamp.to_be_bytes();
-    buf.extend_from_slice(&source_chain.as_bytes());
-    buf.extend_from_slice(&dest_chain.as_bytes());
+    buf.extend_from_slice(source_chain.as_bytes());
+    buf.extend_from_slice(dest_chain.as_bytes());
     buf.extend_from_slice(&nonce);
     buf.extend_from_slice(&timestamp);
     buf.extend_from_slice(&req.data);
