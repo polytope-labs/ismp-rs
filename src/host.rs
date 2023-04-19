@@ -23,9 +23,11 @@ use crate::{
     prelude::Vec,
     router::{ISMPRouter, Request},
 };
-use alloc::string::{ToString, String};
-use alloc::format;
-use alloc::boxed::Box;
+use alloc::{
+    boxed::Box,
+    format,
+    string::{String, ToString},
+};
 use codec::{Decode, Encode};
 use core::{str::FromStr, time::Duration};
 use primitive_types::H256;
@@ -104,16 +106,7 @@ pub trait ISMPHost {
 
 /// Currently supported state machines.
 #[derive(
-    Clone,
-    Debug,
-    Copy,
-    Encode,
-    Decode,
-    PartialOrd,
-    Ord,
-    PartialEq,
-    Eq,
-    scale_info::TypeInfo,
+    Clone, Debug, Copy, Encode, Decode, PartialOrd, Ord, PartialEq, Eq, scale_info::TypeInfo,
 )]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub enum StateMachine {
