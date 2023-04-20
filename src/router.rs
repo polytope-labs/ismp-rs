@@ -148,7 +148,7 @@ pub enum RequestResponse {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct DispatchError {
-    /// Error message
+    /// Descriptive error message
     pub msg: String,
     /// Request nonce
     pub nonce: u64,
@@ -175,15 +175,15 @@ pub struct DispatchResult {
 }
 
 pub trait ISMPRouter {
-    /// Dispatch some requests the ISMP router.
+    /// Dispatch some requests to the ISMP router.
     /// For outgoing requests, they should be committed in state as a keccak256 hash
     /// For incoming requests, they should be dispatched to destination modules
     fn dispatch(&self, request: Vec<Request>) -> DispatchResult;
 
-    /// Dispatch request timeouts to the modules
+    /// Dispatch request timeouts to the router which should dispatch them to modules
     fn dispatch_timeout(&self, request: Vec<Request>) -> DispatchResult;
 
-    /// Dispatch some responses the ISMP router.
+    /// Dispatch some responses to the ISMP router.
     /// For outgoing responses, the router should commit them to host state as a keccak256 hash
     /// For incoming responses, they should be dispatched to destination modules
     fn write_response(&self, response: Vec<Response>) -> DispatchResult;

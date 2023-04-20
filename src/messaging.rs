@@ -42,7 +42,7 @@ pub struct CreateConsensusClient {
 
 #[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq)]
 pub struct RequestMessage {
-    /// Request from source chain
+    /// Requests from source chain
     pub requests: Vec<Request>,
     /// Membership batch proof for these requests
     pub proof: Proof,
@@ -50,7 +50,7 @@ pub struct RequestMessage {
 
 #[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq)]
 pub struct ResponseMessage {
-    /// Response from sink chain
+    /// Responses from sink chain
     pub responses: Vec<Response>,
     /// Membership batch proof for these responses
     pub proof: Proof,
@@ -58,7 +58,7 @@ pub struct ResponseMessage {
 
 #[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq)]
 pub struct TimeoutMessage {
-    /// Request timeout request
+    /// Request timeouts
     pub requests: Vec<Request>,
     /// Non membership batch proof for these requests
     pub timeout_proof: Proof,
