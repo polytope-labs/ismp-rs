@@ -1,5 +1,5 @@
 use core::{cell::RefCell, fmt::Debug, time::Duration};
-use keccak_hash::keccak;
+use keccak_hash::{keccak, H256};
 use std::collections::HashMap;
 use std::time::SystemTime;
 
@@ -13,8 +13,9 @@ use crate::{
     error::Error,
     handlers::{MessageResult, RequestResponseResult},
     host::{ISMPHost, StateMachine},
-    messaging::{RequestMessage, CreateConsensusClient},
+    messaging::{CreateConsensusClient, Proof, RequestMessage, ResponseMessage},
     router::{ISMPRouter, RequestResponse},
+    util::hash_request,
 };
 
 pub type Hash = [u8; 32];
@@ -24,14 +25,30 @@ pub const ETHEREUM_CONSENSUS_CLIENT_ID: u64 = 1;
 #[derive(Debug, Clone)]
 struct DummyHost {
     storage_state_machine: Rc<RefCell<HashMap<StateMachineHeight, StateCommitment>>>,
-    storage_consensus: Rc<RefCell<HashMap<ConsensusClientId, Vec<u8>>>>,
+    storage_consensus: Rc<RefCell<HashMap<ConsensusClientId, DummyClient>>>,
+    storage_consensus_encoded: Rc<RefCell<HashMap<ConsensusClientId, Vec<u8>>>>,
     storage_latest_state_machine: Rc<RefCell<HashMap<StateMachineId, StateMachineHeight>>>,
     frozen_machine_height: Rc<RefCell<HashMap<StateMachineHeight, bool>>>,
     updated_consensus_timestamp: Rc<RefCell<HashMap<ConsensusClientId, Duration>>>,
     state_machine_id: StateMachine,
+    request_commitment: Rc<RefCell<HashMap<H256, RequestMessage>>>,
+    reponse_commitment: Rc<RefCell<HashMap<H256, ResponseMessage>>>,
+    consensus_proofs: Rc<RefCell<HashMap<ConsensusClientId, Proof>>>,
 }
 
+impl ISMPRouter for RequestMessage {
+    fn dispatch(&self, request: crate::router::Request) -> Result<(), Error> {
+        todo!()
+    }
 
+    fn dispatch_timeout(&self, request: crate::router::Request) -> Result<(), Error> {
+        todo!()
+    }
+
+    fn write_response(&self, response: crate::router::Response) -> Result<(), Error> {
+        todo!()
+    }
+}
 
 impl ISMPHost for DummyHost {
     fn host_state_machine(&self) -> crate::host::StateMachine {
@@ -66,7 +83,7 @@ impl ISMPHost for DummyHost {
         &self,
         id: crate::consensus_client::ConsensusClientId,
     ) -> Result<Vec<u8>, Error> {
-        self.storage_consensus
+        self.storage_consensus_encoded
             .borrow()
             .get(&id)
             .cloned()
@@ -99,7 +116,7 @@ impl ISMPHost for DummyHost {
         id: crate::consensus_client::ConsensusClientId,
         state: Vec<u8>,
     ) -> Result<(), Error> {
-        self.storage_consensus
+        self.storage_consensus_encoded
             .borrow_mut()
             .insert(id.clone(), state);
 
@@ -153,12 +170,11 @@ impl ISMPHost for DummyHost {
         &self,
         id: crate::consensus_client::ConsensusClientId,
     ) -> Result<Box<dyn crate::consensus_client::ConsensusClient>, Error> {
-        // self.storage_consensus
-        // 	.borrow()
-        // 	.get(&id)
-        // 	.cloned()
-        // 	.ok_or(Error::ConsensusStateNotFound { id })
-        // 	.map(|consensus| Box::new(consensus) as Box<dyn crate::consensus_client::ConsensusClient>)
+        // if self.storage_consensus.borrow().contains_key(&id) {
+        // 	Box::new(self.storage_consensus.borrow_mut().get(&id).unwrap())
+        // } else {
+        // 	Err(Error::ConsensusStateNotFound { id })
+        // }
         todo!()
     }
 
@@ -173,11 +189,14 @@ impl ISMPHost for DummyHost {
     }
 
     fn ismp_router(&self) -> Box<dyn crate::router::ISMPRouter> {
-        todo!()
+        Box::new(RequestMessage {
+            request: todo!(),
+            proof: todo!(),
+        })
     }
 
     fn consensus_update_time(&self, id: ConsensusClientId) -> Result<core::time::Duration, Error> {
-        if self.storage_consensus.borrow().contains_key(&id) {
+        if self.storage_consensus_encoded.borrow().contains_key(&id) {
             self.updated_consensus_timestamp
                 .borrow_mut()
                 .insert(id, self.timestamp());
@@ -195,7 +214,14 @@ impl ISMPHost for DummyHost {
     }
 
     fn request_commitment(&self, req: &crate::router::Request) -> Result<keccak_hash::H256, Error> {
-        todo!()
+        let commitment = hash_request::<Self>(req);
+        if self.request_commitment.borrow().contains_key(&commitment) {
+            Ok(commitment)
+        } else {
+            Err(Error::ImplementationSpecific(
+                "Request not found".to_string(),
+            ))
+        }
     }
 
     fn is_expired(&self, consensus_id: ConsensusClientId) -> Result<(), Error> {
@@ -210,28 +236,17 @@ impl ISMPHost for DummyHost {
     }
 }
 
-// impl DummyClient {
-//     fn new(
-//         id: ConsensusClientId,
-//         state: IntermediateState,
-//         host: DummyHost,
-//         consensus_state: Vec<u8>,
-//     ) -> Self {
-//         Self {
-//             id,
-//             state,
-//             host,
-//             consensus_state,
-//         }
-//     }
-// }
-
 // Mock client object
-struct DummyClient {
-    id: ConsensusClientId,
-    state: IntermediateState,
-    host: DummyHost,
-    consensus_state: Vec<u8>,
+#[derive(Debug, Clone)]
+pub struct DummyClient {
+    /// Scale encoded consensus state
+    pub consensus_state: Vec<u8>,
+    /// Consensus client id
+    pub consensus_client_id: ConsensusClientId,
+    /// State machine commitments
+    pub state_machine_commitments: Vec<IntermediateState>,
+    /// proof
+    pub proof: Vec<Proof>,
 }
 
 impl ConsensusClient for DummyClient {
@@ -245,9 +260,10 @@ impl ConsensusClient for DummyClient {
         trusted_consensus_state: Vec<u8>,
         proof: Vec<u8>,
     ) -> Result<(Vec<u8>, Vec<IntermediateState>), Error> {
-        let mut state = self.state.clone();
+        // let mut state = self.state.clone();
 
-        Ok((self.consensus_state.clone(), vec![state]))
+        // Ok((self.consensus_state.clone(), vec![state]))
+        todo!()
     }
 
     fn verify_membership(
@@ -275,8 +291,12 @@ impl ConsensusClient for DummyClient {
     }
 
     fn is_frozen(&self, trusted_consensus_state: &[u8]) -> Result<(), Error> {
-        // since the parachain consensus client cannot be frozen, we always return Ok
-        Ok(())
+
+		if self.consensus_state == trusted_consensus_state {
+			Ok(())
+		} else  {
+			Err(Error::ImplementationSpecific("Consensus state not found".to_string()))
+		}
     }
 }
 
