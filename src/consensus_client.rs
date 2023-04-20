@@ -92,7 +92,7 @@ pub trait ConsensusClient {
     /// Return unbonding period
     fn unbonding_period(&self) -> Duration;
 
-    /// Verify the merkle mountain range membership of proof of some requests/responses.
+    /// Verify the merkle mountain range membership proof of a batch of requests/responses.
     fn verify_membership(
         &self,
         host: &dyn ISMPHost,
