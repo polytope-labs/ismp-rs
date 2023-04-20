@@ -18,8 +18,9 @@
 use crate::{
     consensus_client::{ConsensusClient, ConsensusClientId, StateMachineHeight},
     error::Error,
-    host::{ISMPHost, StateMachine},
+    host::ISMPHost,
     messaging::{Message, Proof},
+    router::DispatchResult,
 };
 use alloc::{boxed::Box, collections::BTreeSet};
 
@@ -40,22 +41,13 @@ pub struct ConsensusClientCreatedResult {
     pub consensus_client_id: ConsensusClientId,
 }
 
-pub struct RequestResponseResult {
-    /// Destination chain for request or response
-    pub dest_chain: StateMachine,
-    /// Source chain for request or response
-    pub source_chain: StateMachine,
-    /// Request nonce
-    pub nonce: u64,
-}
-
 /// Result returned when ismp messages are handled successfully
 pub enum MessageResult {
     ConsensusMessage(ConsensusUpdateResult),
-    Request(RequestResponseResult),
-    Response(RequestResponseResult),
+    Request(DispatchResult),
+    Response(DispatchResult),
     ConsensusClientCreated(ConsensusClientCreatedResult),
-    Timeout(RequestResponseResult),
+    Timeout(DispatchResult),
 }
 
 /// This function serves as an entry point to handle the message types provided by the ISMP protocol
