@@ -22,7 +22,7 @@ use crate::{
     messaging::{Message, Proof},
     router::DispatchResult,
 };
-use alloc::{boxed::Box, collections::BTreeSet};
+use alloc::{boxed::Box, collections::BTreeSet, vec::Vec};
 
 mod consensus;
 mod request;
@@ -44,10 +44,10 @@ pub struct ConsensusClientCreatedResult {
 /// Result returned when ismp messages are handled successfully
 pub enum MessageResult {
     ConsensusMessage(ConsensusUpdateResult),
-    Request(DispatchResult),
-    Response(DispatchResult),
+    Request(Vec<DispatchResult>),
+    Response(Vec<DispatchResult>),
     ConsensusClientCreated(ConsensusClientCreatedResult),
-    Timeout(DispatchResult),
+    Timeout(Vec<DispatchResult>),
 }
 
 /// This function serves as an entry point to handle the message types provided by the ISMP protocol

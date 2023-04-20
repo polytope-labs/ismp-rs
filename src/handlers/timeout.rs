@@ -61,7 +61,7 @@ where
     }
 
     let router = host.ismp_router();
-    let result = router.dispatch_timeout(msg.requests);
+    let result = msg.requests.into_iter().map(|request| router.dispatch_timeout(request)).collect();
 
     Ok(MessageResult::Timeout(result))
 }

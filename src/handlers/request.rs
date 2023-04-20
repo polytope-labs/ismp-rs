@@ -40,7 +40,7 @@ where
 
     let router = host.ismp_router();
 
-    let result = router.dispatch(msg.requests);
+    let result = msg.requests.into_iter().map(|request| router.dispatch(request)).collect();
 
     Ok(MessageResult::Request(result))
 }

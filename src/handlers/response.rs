@@ -54,7 +54,8 @@ where
 
     let router = host.ismp_router();
 
-    let result = router.write_response(msg.responses);
+    let result =
+        msg.responses.into_iter().map(|response| router.write_response(response)).collect();
 
     Ok(MessageResult::Response(result))
 }

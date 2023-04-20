@@ -147,44 +147,38 @@ pub enum RequestResponse {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct DispatchError {
-    /// Descriptive error message
-    pub msg: String,
-    /// Request nonce
-    pub nonce: u64,
-    /// Source chain for request or response
-    pub source: StateMachine,
-    /// Destination chain for request or response
-    pub dest: StateMachine,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct DispatchSuccess {
-    /// Destination chain for request or response
-    pub dest_chain: StateMachine,
-    /// Source chain for request or response
-    pub source_chain: StateMachine,
-    /// Request nonce
-    pub nonce: u64,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct DispatchResult {
-    pub errors: Vec<DispatchError>,
-    pub successes: Vec<DispatchSuccess>,
+pub enum DispatchResult {
+    Error {
+        /// Descriptive error message
+        msg: String,
+        /// Request nonce
+        nonce: u64,
+        /// Source chain for request or response
+        source: StateMachine,
+        /// Destination chain for request or response
+        dest: StateMachine,
+    },
+    Success {
+        /// Destination chain for request or response
+        dest_chain: StateMachine,
+        /// Source chain for request or response
+        source_chain: StateMachine,
+        /// Request nonce
+        nonce: u64,
+    },
 }
 
 pub trait ISMPRouter {
     /// Dispatch some requests to the ISMP router.
     /// For outgoing requests, they should be committed in state as a keccak256 hash
     /// For incoming requests, they should be dispatched to destination modules
-    fn dispatch(&self, request: Vec<Request>) -> DispatchResult;
+    fn dispatch(&self, request: Request) -> DispatchResult;
 
     /// Dispatch request timeouts to the router which should dispatch them to modules
-    fn dispatch_timeout(&self, request: Vec<Request>) -> DispatchResult;
+    fn dispatch_timeout(&self, request: Request) -> DispatchResult;
 
     /// Dispatch some responses to the ISMP router.
     /// For outgoing responses, the router should commit them to host state as a keccak256 hash
     /// For incoming responses, they should be dispatched to destination modules
-    fn write_response(&self, response: Vec<Response>) -> DispatchResult;
+    fn write_response(&self, response: Response) -> DispatchResult;
 }
