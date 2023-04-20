@@ -1,8 +1,4 @@
-use core::{
-    cell::RefCell,
-    fmt::Debug,
-    time::{self, Duration},
-};
+use core::{cell::RefCell, fmt::Debug, time::Duration};
 use keccak_hash::keccak;
 use std::collections::HashMap;
 use std::time::SystemTime;
@@ -17,29 +13,25 @@ use crate::{
     error::Error,
     handlers::{MessageResult, RequestResponseResult},
     host::{ISMPHost, StateMachine},
-    messaging::RequestMessage,
+    messaging::{RequestMessage, CreateConsensusClient},
     router::{ISMPRouter, RequestResponse},
 };
 
 pub type Hash = [u8; 32];
 pub const ETHEREUM_CONSENSUS_CLIENT_ID: u64 = 1;
 
+// Mock host object
 #[derive(Debug, Clone)]
 struct DummyHost {
     storage_state_machine: Rc<RefCell<HashMap<StateMachineHeight, StateCommitment>>>,
     storage_consensus: Rc<RefCell<HashMap<ConsensusClientId, Vec<u8>>>>,
     storage_latest_state_machine: Rc<RefCell<HashMap<StateMachineId, StateMachineHeight>>>,
     frozen_machine_height: Rc<RefCell<HashMap<StateMachineHeight, bool>>>,
-    frozen_consensus: Rc<RefCell<HashMap<ConsensusClientId, bool>>>,
     updated_consensus_timestamp: Rc<RefCell<HashMap<ConsensusClientId, Duration>>>,
     state_machine_id: StateMachine,
 }
 
-struct DummyClient {
-    id: ConsensusClientId,
-    state: IntermediateState,
-    host: DummyHost,
-}
+
 
 impl ISMPHost for DummyHost {
     fn host_state_machine(&self) -> crate::host::StateMachine {
@@ -185,14 +177,21 @@ impl ISMPHost for DummyHost {
     }
 
     fn consensus_update_time(&self, id: ConsensusClientId) -> Result<core::time::Duration, Error> {
-        todo!()
+        if self.storage_consensus.borrow().contains_key(&id) {
+            self.updated_consensus_timestamp
+                .borrow_mut()
+                .insert(id, self.timestamp());
+            Ok(self.timestamp())
+        } else {
+            Err(Error::ConsensusStateNotFound { id })
+        }
     }
 
     fn keccak256(bytes: &[u8]) -> keccak_hash::H256
     where
         Self: Sized,
     {
-        todo!()
+        keccak(bytes)
     }
 
     fn request_commitment(&self, req: &crate::router::Request) -> Result<keccak_hash::H256, Error> {
@@ -211,10 +210,28 @@ impl ISMPHost for DummyHost {
     }
 }
 
-impl DummyClient {
-    fn new(id: ConsensusClientId, state: IntermediateState, host: DummyHost) -> Self {
-        Self { id, state, host }
-    }
+// impl DummyClient {
+//     fn new(
+//         id: ConsensusClientId,
+//         state: IntermediateState,
+//         host: DummyHost,
+//         consensus_state: Vec<u8>,
+//     ) -> Self {
+//         Self {
+//             id,
+//             state,
+//             host,
+//             consensus_state,
+//         }
+//     }
+// }
+
+// Mock client object
+struct DummyClient {
+    id: ConsensusClientId,
+    state: IntermediateState,
+    host: DummyHost,
+    consensus_state: Vec<u8>,
 }
 
 impl ConsensusClient for DummyClient {
@@ -228,7 +245,9 @@ impl ConsensusClient for DummyClient {
         trusted_consensus_state: Vec<u8>,
         proof: Vec<u8>,
     ) -> Result<(Vec<u8>, Vec<IntermediateState>), Error> {
-        todo!()
+        let mut state = self.state.clone();
+
+        Ok((self.consensus_state.clone(), vec![state]))
     }
 
     fn verify_membership(
@@ -256,7 +275,8 @@ impl ConsensusClient for DummyClient {
     }
 
     fn is_frozen(&self, trusted_consensus_state: &[u8]) -> Result<(), Error> {
-        todo!()
+        // since the parachain consensus client cannot be frozen, we always return Ok
+        Ok(())
     }
 }
 
