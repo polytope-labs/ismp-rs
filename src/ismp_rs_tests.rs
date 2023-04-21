@@ -11,10 +11,10 @@ use crate::{
         StateMachineId,
     },
     error::Error,
-    handlers::{MessageResult, RequestResponseResult},
+    handlers,
     host::{ISMPHost, StateMachine},
-    messaging::{CreateConsensusClient, Proof, RequestMessage, ResponseMessage},
-    router::{ISMPRouter, RequestResponse},
+    messaging::{Proof, RequestMessage, ResponseMessage},
+    router::{ISMPRouter, RequestResponse, DispatchSuccess, DispatchError},
     util::hash_request,
 };
 
@@ -36,16 +36,22 @@ struct DummyHost {
     consensus_proofs: Rc<RefCell<HashMap<ConsensusClientId, Proof>>>,
 }
 
+impl DummyHost {
+	fn new () -> Self {
+		todo!("Implement DummyHost::new()")
+	}
+}
+
 impl ISMPRouter for RequestMessage {
-    fn dispatch(&self, request: crate::router::Request) -> Result<(), Error> {
+    fn dispatch(&self, request: crate::router::Request) -> Result<DispatchSuccess, DispatchError> {
         todo!()
     }
 
-    fn dispatch_timeout(&self, request: crate::router::Request) -> Result<(), Error> {
+    fn dispatch_timeout(&self, request: crate::router::Request) -> Result<DispatchSuccess, DispatchError> {
         todo!()
     }
 
-    fn write_response(&self, response: crate::router::Response) -> Result<(), Error> {
+    fn write_response(&self, response: crate::router::Response) -> Result<DispatchSuccess, DispatchError> {
         todo!()
     }
 }
@@ -190,8 +196,8 @@ impl ISMPHost for DummyHost {
 
     fn ismp_router(&self) -> Box<dyn crate::router::ISMPRouter> {
         Box::new(RequestMessage {
-            request: todo!(),
             proof: todo!(),
+            requests: todo!(),
         })
     }
 
@@ -276,17 +282,17 @@ impl ConsensusClient for DummyClient {
         todo!()
     }
 
-    fn state_trie_key(&self, request: RequestResponse) -> Vec<u8> {
+    fn state_trie_key(&self, request: RequestResponse) -> Vec<Vec<u8>> {
         todo!()
     }
 
     fn verify_state_proof(
         &self,
         host: &dyn ISMPHost,
-        key: Vec<u8>,
+        key: Vec<Vec<u8>>,
         root: StateCommitment,
         proof: &crate::messaging::Proof,
-    ) -> Result<Option<Vec<u8>>, Error> {
+    ) -> Result<Vec<std::option::Option<Vec<u8>>>, Error> {
         todo!()
     }
 
@@ -305,6 +311,9 @@ impl ConsensusClient for DummyClient {
 #[test]
 //Test function that checks that the challenge period is elapsed before a new consensus update is allowed
 pub fn check_challenge_period_elapsed() {
+
+	let mut host = DummyHost::new();
+	
     println!("check_challenge_period_elapsed");
     assert!(true);
 }
