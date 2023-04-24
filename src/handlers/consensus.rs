@@ -101,7 +101,7 @@ where
     // Store all intermedite state machine commitments
     for intermediate_state in message.state_machine_commitments {
         host.store_state_machine_commitment(
-            intermediate_state.height.clone(),
+            intermediate_state.height,
             intermediate_state.commitment,
         )?;
         host.store_latest_commitment_height(intermediate_state.height)?;
