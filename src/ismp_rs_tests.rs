@@ -28,8 +28,8 @@ struct DummyHost {
     frozen_machine_height: Rc<RefCell<HashMap<StateMachineHeight, bool>>>,
     updated_consensus_timestamp: Rc<RefCell<HashMap<ConsensusClientId, Duration>>>,
     state_machine_id: StateMachine,
-    request_commitment: Rc<RefCell<Vec<H256>>>,
-    reponse_commitment: Rc<RefCell<Vec<H256>>>,
+    request_commitment: Rc<RefCell<HashMap<H256, Request>>>,
+    reponse_commitment: Rc<RefCell<HashMap<H256, Request>>>,
     consensus_proofs: Rc<RefCell<HashMap<ConsensusClientId, Proof>>>,
 }
 
@@ -48,8 +48,10 @@ impl DummyHost {
         let updated_consensus_timestamp: Rc<RefCell<HashMap<ConsensusClientId, Duration>>> =
             Rc::new(RefCell::new(HashMap::new()));
         let state_machine_id = StateMachine::Ethereum;
-        let request_commitment: Rc<RefCell<Vec<H256>>> = Rc::new(RefCell::new(Vec::new()));
-        let reponse_commitment: Rc<RefCell<Vec<H256>>> = Rc::new(RefCell::new(Vec::new()));
+        let request_commitment: Rc<RefCell<HashMap<H256, Request>>> =
+            Rc::new(RefCell::new(HashMap::new()));
+        let reponse_commitment: Rc<RefCell<HashMap<H256, Request>>> =
+            Rc::new(RefCell::new(HashMap::new()));
         let consensus_proofs: Rc<RefCell<HashMap<ConsensusClientId, Proof>>> =
             Rc::new(RefCell::new(HashMap::new()));
         DummyHost {
@@ -73,23 +75,35 @@ impl ISMPRouter for Request {
         // to dispatch a request we have to create a new host object
         let host = DummyHost::new();
         assert_ne!(host.host_state_machine(), request.dest_chain());
+        if host
+            .request_commitment
+            .borrow()
+            .contains_key(&hash_request::<DummyHost>(&request))
+        {
+            return Err(DispatchError {
+                msg: "Duplicate detected!".to_owned(),
+                nonce: request.nonce(),
+                source: host.state_machine_id,
+                dest: request.dest_chain(),
+            });
+        }
 
         if host.host_state_machine() == request.dest_chain() {
             return Err(DispatchError {
                 msg: "Duplicate detected!".to_owned(),
                 nonce: request.nonce(),
                 source: host.state_machine_id,
-                dest: StateMachine::Arbitrum,
+                dest: request.dest_chain(),
             });
         } else {
             assert!(!host
                 .request_commitment
                 .borrow()
-                .contains(&hash_request::<DummyHost>(&request)));
+                .contains_key(&hash_request::<DummyHost>(&request)));
 
             host.request_commitment
                 .borrow_mut()
-                .push(hash_request::<DummyHost>(&request));
+                .insert(hash_request::<DummyHost>(&request), request.clone());
 
             return Ok(DispatchSuccess {
                 nonce: request.nonce(),
@@ -286,7 +300,7 @@ impl ISMPHost for DummyHost {
 
     fn request_commitment(&self, req: &crate::router::Request) -> Result<keccak_hash::H256, Error> {
         let commitment = hash_request::<Self>(req);
-        if self.request_commitment.borrow().contains(&commitment) {
+        if self.request_commitment.borrow().contains_key(&commitment) {
             Ok(commitment)
         } else {
             Err(Error::ImplementationSpecific(
@@ -394,11 +408,10 @@ pub fn check_duplicate_request() {
     router
         .dispatch(request.clone())
         .expect("Failed to dispatch request");
+    test_duplicate(host, request);
+}
 
-    // let second_request = Request::Post(second_post_request);
-    router.dispatch(request.clone()).unwrap();
-    router.dispatch(request.clone()).unwrap();
-    router.dispatch(request.clone()).unwrap();
-
-    assert_ne!(host.state_machine_id, request.dest_chain());
+fn test_duplicate(host: impl ISMPHost, router: impl ISMPRouter) {
+	todo!()
+    // check_duplicate_request();
 }
