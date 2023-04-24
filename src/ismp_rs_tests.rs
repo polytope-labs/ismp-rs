@@ -1,22 +1,19 @@
-use core::{cell::RefCell, fmt::Debug, time::Duration};
-use keccak_hash::{keccak, H256};
-use std::collections::HashMap;
-use std::time::SystemTime;
-
-use alloc::rc::Rc;
-
 use crate::{
     consensus_client::{
         ConsensusClient, ConsensusClientId, IntermediateState, StateCommitment, StateMachineHeight,
         StateMachineId,
     },
     error::Error,
-    handlers,
     host::{ISMPHost, StateMachine},
     messaging::{Proof, RequestMessage, ResponseMessage},
-    router::{ISMPRouter, RequestResponse, DispatchSuccess, DispatchError},
+    router::{DispatchError, DispatchSuccess, ISMPRouter, Post, Request, RequestResponse},
     util::hash_request,
 };
+use alloc::rc::Rc;
+use core::{cell::RefCell, fmt::Debug, time::Duration};
+use keccak_hash::{keccak, H256};
+use std::collections::HashMap;
+use std::time::SystemTime;
 
 pub type Hash = [u8; 32];
 pub const ETHEREUM_CONSENSUS_CLIENT_ID: u64 = 1;
@@ -31,27 +28,88 @@ struct DummyHost {
     frozen_machine_height: Rc<RefCell<HashMap<StateMachineHeight, bool>>>,
     updated_consensus_timestamp: Rc<RefCell<HashMap<ConsensusClientId, Duration>>>,
     state_machine_id: StateMachine,
-    request_commitment: Rc<RefCell<HashMap<H256, RequestMessage>>>,
-    reponse_commitment: Rc<RefCell<HashMap<H256, ResponseMessage>>>,
+    request_commitment: Rc<RefCell<Vec<H256>>>,
+    reponse_commitment: Rc<RefCell<Vec<H256>>>,
     consensus_proofs: Rc<RefCell<HashMap<ConsensusClientId, Proof>>>,
 }
 
 impl DummyHost {
-	fn new () -> Self {
-		todo!("Implement DummyHost::new()")
-	}
+    fn new() -> Self {
+        let storage_state_machine: Rc<RefCell<HashMap<StateMachineHeight, StateCommitment>>> =
+            Rc::new(RefCell::new(HashMap::new()));
+        let storage_consensus: Rc<RefCell<HashMap<ConsensusClientId, DummyClient>>> =
+            Rc::new(RefCell::new(HashMap::new()));
+        let storage_consensus_encoded: Rc<RefCell<HashMap<ConsensusClientId, Vec<u8>>>> =
+            Rc::new(RefCell::new(HashMap::new()));
+        let storage_latest_state_machine: Rc<RefCell<HashMap<StateMachineId, StateMachineHeight>>> =
+            Rc::new(RefCell::new(HashMap::new()));
+        let frozen_machine_height: Rc<RefCell<HashMap<StateMachineHeight, bool>>> =
+            Rc::new(RefCell::new(HashMap::new()));
+        let updated_consensus_timestamp: Rc<RefCell<HashMap<ConsensusClientId, Duration>>> =
+            Rc::new(RefCell::new(HashMap::new()));
+        let state_machine_id = StateMachine::Ethereum;
+        let request_commitment: Rc<RefCell<Vec<H256>>> = Rc::new(RefCell::new(Vec::new()));
+        let reponse_commitment: Rc<RefCell<Vec<H256>>> = Rc::new(RefCell::new(Vec::new()));
+        let consensus_proofs: Rc<RefCell<HashMap<ConsensusClientId, Proof>>> =
+            Rc::new(RefCell::new(HashMap::new()));
+        DummyHost {
+            storage_state_machine,
+            storage_consensus,
+            storage_consensus_encoded,
+            storage_latest_state_machine,
+            frozen_machine_height,
+            updated_consensus_timestamp,
+            state_machine_id,
+            request_commitment,
+            reponse_commitment,
+            consensus_proofs,
+        }
+    }
 }
 
-impl ISMPRouter for RequestMessage {
+impl ISMPRouter for Request {
+    // dispatching request to the host
     fn dispatch(&self, request: crate::router::Request) -> Result<DispatchSuccess, DispatchError> {
+        // to dispatch a request we have to create a new host object
+        let host = DummyHost::new();
+        assert_ne!(host.host_state_machine(), request.dest_chain());
+
+        if host.host_state_machine() == request.dest_chain() {
+            return Err(DispatchError {
+                msg: "Duplicate detected!".to_owned(),
+                nonce: request.nonce(),
+                source: host.state_machine_id,
+                dest: StateMachine::Arbitrum,
+            });
+        } else {
+            assert!(!host
+                .request_commitment
+                .borrow()
+                .contains(&hash_request::<DummyHost>(&request)));
+
+            host.request_commitment
+                .borrow_mut()
+                .push(hash_request::<DummyHost>(&request));
+
+            return Ok(DispatchSuccess {
+                nonce: request.nonce(),
+                dest_chain: request.dest_chain(),
+                source_chain: host.state_machine_id,
+            });
+        }
+    }
+
+    fn dispatch_timeout(
+        &self,
+        request: crate::router::Request,
+    ) -> Result<DispatchSuccess, DispatchError> {
         todo!()
     }
 
-    fn dispatch_timeout(&self, request: crate::router::Request) -> Result<DispatchSuccess, DispatchError> {
-        todo!()
-    }
-
-    fn write_response(&self, response: crate::router::Response) -> Result<DispatchSuccess, DispatchError> {
+    fn write_response(
+        &self,
+        response: crate::router::Response,
+    ) -> Result<DispatchSuccess, DispatchError> {
         todo!()
     }
 }
@@ -195,10 +253,17 @@ impl ISMPHost for DummyHost {
     }
 
     fn ismp_router(&self) -> Box<dyn crate::router::ISMPRouter> {
-        Box::new(RequestMessage {
-            proof: todo!(),
-            requests: todo!(),
-        })
+        let host = DummyHost::new();
+        let post_request = Post {
+            source_chain: host.state_machine_id,
+            dest_chain: StateMachine::Arbitrum,
+            nonce: 45,
+            from: vec![1, 2, 3],
+            to: vec![2, 4, 6],
+            timeout_timestamp: Duration::from_secs(45).as_secs(),
+            data: vec![1, 2, 3, 7, 8, 89],
+        };
+        Box::new(Request::Post(post_request))
     }
 
     fn consensus_update_time(&self, id: ConsensusClientId) -> Result<core::time::Duration, Error> {
@@ -221,7 +286,7 @@ impl ISMPHost for DummyHost {
 
     fn request_commitment(&self, req: &crate::router::Request) -> Result<keccak_hash::H256, Error> {
         let commitment = hash_request::<Self>(req);
-        if self.request_commitment.borrow().contains_key(&commitment) {
+        if self.request_commitment.borrow().contains(&commitment) {
             Ok(commitment)
         } else {
             Err(Error::ImplementationSpecific(
@@ -297,23 +362,43 @@ impl ConsensusClient for DummyClient {
     }
 
     fn is_frozen(&self, trusted_consensus_state: &[u8]) -> Result<(), Error> {
-
-		if self.consensus_state == trusted_consensus_state {
-			Ok(())
-		} else  {
-			Err(Error::ImplementationSpecific("Consensus state not found".to_string()))
-		}
+        if self.consensus_state == trusted_consensus_state {
+            Ok(())
+        } else {
+            Err(Error::ImplementationSpecific(
+                "Consensus state not found".to_string(),
+            ))
+        }
     }
 }
 
 #[cfg(test)]
-#[cfg(feature = "ismp_rs_tests")]
+// #[cfg(feature = "ismp_rs_tests")]
 #[test]
 //Test function that checks that the challenge period is elapsed before a new consensus update is allowed
-pub fn check_challenge_period_elapsed() {
+pub fn check_duplicate_request() {
+    let host = DummyHost::new();
+    let router = host.ismp_router();
+    let post_request = Post {
+        source_chain: host.state_machine_id,
+        dest_chain: StateMachine::Arbitrum,
+        nonce: 45,
+        from: vec![1, 2, 3],
+        to: vec![2, 4, 6],
+        timeout_timestamp: Duration::from_secs(45).as_secs(),
+        data: vec![1, 2, 3, 7, 8, 89],
+    };
+    let request = Request::Post(post_request);
+    assert_ne!(host.state_machine_id, request.dest_chain());
 
-	let mut host = DummyHost::new();
-	
-    println!("check_challenge_period_elapsed");
-    assert!(true);
+    router
+        .dispatch(request.clone())
+        .expect("Failed to dispatch request");
+
+    // let second_request = Request::Post(second_post_request);
+    router.dispatch(request.clone()).unwrap();
+    router.dispatch(request.clone()).unwrap();
+    router.dispatch(request.clone()).unwrap();
+
+    assert_ne!(host.state_machine_id, request.dest_chain());
 }
