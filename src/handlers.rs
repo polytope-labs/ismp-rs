@@ -93,7 +93,7 @@ where
 
     // Ensure state machine is not frozen
     if host.is_frozen(proof.height)? {
-        return Err(Error::FrozenStateMachine { height: proof.height });
+        return Err(Error::FrozenStateMachine { height: proof.height })
     }
 
     // Ensure delay period has elapsed
@@ -102,7 +102,7 @@ where
             consensus_id: consensus_client_id,
             current_time: host.timestamp(),
             update_time: host.consensus_update_time(proof.height.id.consensus_client)?,
-        });
+        })
     }
 
     Ok(consensus_client)

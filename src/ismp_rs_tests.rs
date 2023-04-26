@@ -355,7 +355,7 @@ impl ConsensusClient for DummyClient {
 }
 
 #[cfg(test)]
-// #[cfg(feature = "ismp_rs_tests")]
+#[cfg(feature = "ismp_rs_tests")]
 #[test]
 //Test function that checks that the challenge period is elapsed before a new consensus update is
 // allowed
