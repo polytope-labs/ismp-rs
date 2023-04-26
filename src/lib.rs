@@ -29,10 +29,10 @@ pub mod consensus;
 pub mod error;
 pub mod handlers;
 pub mod host;
+pub mod ismp_rs_tests;
 pub mod messaging;
 pub mod module;
 pub mod router;
-pub mod ismp_rs_tests;
 pub mod util;
 
 pub mod prelude {

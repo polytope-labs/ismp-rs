@@ -39,7 +39,7 @@ where
                 nonce: response.request.nonce(),
                 source: response.request.source_chain(),
                 dest: response.request.dest_chain(),
-            })
+            });
         }
     }
 

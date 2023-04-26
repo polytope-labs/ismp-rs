@@ -68,10 +68,7 @@ where
         }
 
         // Skip duplicate states
-        if host
-            .state_machine_commitment(intermediate_state.height)
-            .is_ok()
-        {
+        if host.state_machine_commitment(intermediate_state.height).is_ok() {
             continue;
         }
 
@@ -84,10 +81,8 @@ where
         host.store_latest_commitment_height(intermediate_state.height)?;
     }
 
-    let result = ConsensusUpdateResult {
-        consensus_client_id: msg.consensus_client_id,
-        state_updates,
-    };
+    let result =
+        ConsensusUpdateResult { consensus_client_id: msg.consensus_client_id, state_updates };
 
     Ok(MessageResult::ConsensusMessage(result))
 }
@@ -114,7 +109,5 @@ where
 
     host.store_consensus_update_time(message.consensus_client_id, host.timestamp())?;
 
-    Ok(ConsensusClientCreatedResult {
-        consensus_client_id: message.consensus_client_id,
-    })
+    Ok(ConsensusClientCreatedResult { consensus_client_id: message.consensus_client_id })
 }
