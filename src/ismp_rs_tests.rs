@@ -1,11 +1,14 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
 use crate::{
-    consensus_client::{
+    consensus::{
         ConsensusClient, ConsensusClientId, IntermediateState, StateCommitment, StateMachineHeight,
         StateMachineId,
     },
     error::Error,
+    handlers::handle_incoming_message,
     host::{ISMPHost, StateMachine},
-    messaging::{Proof, RequestMessage, ResponseMessage},
+    messaging::Proof,
     router::{DispatchError, DispatchSuccess, ISMPRouter, Post, Request, RequestResponse},
     util::hash_request,
 };
@@ -16,7 +19,7 @@ use std::collections::HashMap;
 use std::time::SystemTime;
 
 pub type Hash = [u8; 32];
-pub const ETHEREUM_CONSENSUS_CLIENT_ID: u64 = 1;
+pub const ETHEREUM_CONSENSUS_ID: u64 = 1;
 
 // Mock host object
 #[derive(Debug, Clone)]
@@ -54,6 +57,7 @@ impl DummyHost {
             Rc::new(RefCell::new(HashMap::new()));
         let consensus_proofs: Rc<RefCell<HashMap<ConsensusClientId, Proof>>> =
             Rc::new(RefCell::new(HashMap::new()));
+
         DummyHost {
             storage_state_machine,
             storage_consensus,
@@ -135,8 +139,12 @@ impl ISMPHost for DummyHost {
 
     fn latest_commitment_height(
         &self,
-        id: crate::consensus_client::StateMachineId,
-    ) -> Result<crate::consensus_client::StateMachineHeight, Error> {
+        id: crate::consensus::StateMachineId,
+    ) -> Result<crate::consensus::StateMachineHeight, Error> {
+        println!(
+            "latest_commitment_height {:?}",
+            self.storage_latest_state_machine.borrow()
+        );
         self.storage_latest_state_machine
             .borrow()
             .get(&id)
@@ -148,7 +156,7 @@ impl ISMPHost for DummyHost {
 
     fn state_machine_commitment(
         &self,
-        height: crate::consensus_client::StateMachineHeight,
+        height: crate::consensus::StateMachineHeight,
     ) -> Result<StateCommitment, Error> {
         self.storage_state_machine
             .borrow()
@@ -157,10 +165,7 @@ impl ISMPHost for DummyHost {
             .ok_or(Error::StateCommitmentNotFound { height })
     }
 
-    fn consensus_state(
-        &self,
-        id: crate::consensus_client::ConsensusClientId,
-    ) -> Result<Vec<u8>, Error> {
+    fn consensus_state(&self, id: crate::consensus::ConsensusClientId) -> Result<Vec<u8>, Error> {
         self.storage_consensus_encoded
             .borrow()
             .get(&id)
@@ -174,10 +179,7 @@ impl ISMPHost for DummyHost {
             .expect("Time went backwards")
     }
 
-    fn is_frozen(
-        &self,
-        height: crate::consensus_client::StateMachineHeight,
-    ) -> Result<bool, Error> {
+    fn is_frozen(&self, height: crate::consensus::StateMachineHeight) -> Result<bool, Error> {
         if self.storage_state_machine.borrow().contains_key(&height) {
             if self.frozen_machine_height.borrow().contains_key(&height) {
                 Ok(true)
@@ -191,7 +193,7 @@ impl ISMPHost for DummyHost {
 
     fn store_consensus_state(
         &self,
-        id: crate::consensus_client::ConsensusClientId,
+        id: crate::consensus::ConsensusClientId,
         state: Vec<u8>,
     ) -> Result<(), Error> {
         self.storage_consensus_encoded
@@ -203,7 +205,7 @@ impl ISMPHost for DummyHost {
 
     fn store_consensus_update_time(
         &self,
-        id: crate::consensus_client::ConsensusClientId,
+        id: crate::consensus::ConsensusClientId,
         timestamp: core::time::Duration,
     ) -> Result<(), Error> {
         self.updated_consensus_timestamp
@@ -214,7 +216,7 @@ impl ISMPHost for DummyHost {
 
     fn store_state_machine_commitment(
         &self,
-        height: crate::consensus_client::StateMachineHeight,
+        height: crate::consensus::StateMachineHeight,
         state: StateCommitment,
     ) -> Result<(), Error> {
         self.storage_state_machine
@@ -225,7 +227,7 @@ impl ISMPHost for DummyHost {
 
     fn freeze_state_machine(
         &self,
-        height: crate::consensus_client::StateMachineHeight,
+        height: crate::consensus::StateMachineHeight,
     ) -> Result<(), Error> {
         self.frozen_machine_height
             .borrow_mut()
@@ -236,7 +238,7 @@ impl ISMPHost for DummyHost {
 
     fn store_latest_commitment_height(
         &self,
-        height: crate::consensus_client::StateMachineHeight,
+        height: crate::consensus::StateMachineHeight,
     ) -> Result<(), Error> {
         self.storage_latest_state_machine
             .borrow_mut()
@@ -244,24 +246,9 @@ impl ISMPHost for DummyHost {
         Ok(())
     }
 
-    fn consensus_client(
-        &self,
-        id: crate::consensus_client::ConsensusClientId,
-    ) -> Result<Box<dyn crate::consensus_client::ConsensusClient>, Error> {
-        // if self.storage_consensus.borrow().contains_key(&id) {
-        // 	Box::new(self.storage_consensus.borrow_mut().get(&id).unwrap())
-        // } else {
-        // 	Err(Error::ConsensusStateNotFound { id })
-        // }
-        todo!()
-    }
-
-    fn challenge_period(
-        &self,
-        id: crate::consensus_client::ConsensusClientId,
-    ) -> core::time::Duration {
+    fn challenge_period(&self, id: crate::consensus::ConsensusClientId) -> core::time::Duration {
         match id {
-            id if id == ETHEREUM_CONSENSUS_CLIENT_ID => Duration::from_secs(60),
+            id if id == ETHEREUM_CONSENSUS_ID => Duration::from_secs(0),
             _ => Duration::from_secs(20),
         }
     }
@@ -319,6 +306,16 @@ impl ISMPHost for DummyHost {
 
         Ok(())
     }
+
+    fn consensus_client(&self, id: ConsensusClientId) -> Result<Box<dyn ConsensusClient>, Error> {
+        if self.storage_consensus.borrow().contains_key(&id) {
+            let binding = self.storage_consensus.clone();
+            let client = binding.borrow().get(&id).unwrap().clone();
+            Ok(Box::new(client.clone()))
+        } else {
+            Err(Error::ConsensusStateNotFound { id })
+        }
+    }
 }
 
 // Mock client object
@@ -327,7 +324,7 @@ pub struct DummyClient {
     /// Scale encoded consensus state
     pub consensus_state: Vec<u8>,
     /// Consensus client id
-    pub consensus_client_id: ConsensusClientId,
+    pub consensus_id: ConsensusClientId,
     /// State machine commitments
     pub state_machine_commitments: Vec<IntermediateState>,
     /// proof
@@ -336,7 +333,7 @@ pub struct DummyClient {
 
 impl ConsensusClient for DummyClient {
     fn unbonding_period(&self) -> core::time::Duration {
-        Duration::from_secs(60)
+        Duration::from_secs(10)
     }
 
     fn verify_consensus(
@@ -347,8 +344,10 @@ impl ConsensusClient for DummyClient {
     ) -> Result<(Vec<u8>, Vec<IntermediateState>), Error> {
         // let mut state = self.state.clone();
 
-        // Ok((self.consensus_state.clone(), vec![state]))
-        todo!()
+        Ok((
+            self.consensus_state.clone(),
+            self.state_machine_commitments.clone(),
+        ))
     }
 
     fn verify_membership(
@@ -390,9 +389,14 @@ impl ConsensusClient for DummyClient {
 // #[cfg(feature = "ismp_rs_tests")]
 #[test]
 //Test function that checks that the challenge period is elapsed before a new consensus update is allowed
-pub fn check_duplicate_request() {
+pub fn create_consensus_message() {
+    use crate::messaging::{ConsensusMessage, Message, RequestMessage};
+
+    let ismp_root = keccak(b"ismp root");
+    let state_root = keccak(b"state root");
+
     let host = DummyHost::new();
-    let router = host.ismp_router();
+
     let post_request = Post {
         source_chain: host.state_machine_id,
         dest_chain: StateMachine::Arbitrum,
@@ -402,16 +406,78 @@ pub fn check_duplicate_request() {
         timeout_timestamp: Duration::from_secs(45).as_secs(),
         data: vec![1, 2, 3, 7, 8, 89],
     };
-    let request = Request::Post(post_request);
-    assert_ne!(host.state_machine_id, request.dest_chain());
 
-    router
-        .dispatch(request.clone())
-        .expect("Failed to dispatch request");
-    test_duplicate(host, request);
+    let height = StateMachineHeight {
+        id: StateMachineId {
+            state_id: host.state_machine_id.clone(),
+            consensus_client: ETHEREUM_CONSENSUS_ID,
+        },
+        height: 0,
+    };
+    let now = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .expect("Time went backwards")
+        .as_secs();
+    let req = Request::Post(post_request);
+
+    let commitment: StateCommitment = StateCommitment {
+        timestamp: now,
+        ismp_root: Some(ismp_root),
+        state_root,
+    };
+
+    host.storage_state_machine
+        .borrow_mut()
+        .insert(height, commitment.clone());
+
+    host.consensus_proofs.borrow_mut().insert(
+        ETHEREUM_CONSENSUS_ID,
+        Proof {
+            height,
+            proof: vec![1, 2, 3, 4],
+        },
+    );
+
+    host.store_consensus_state(ETHEREUM_CONSENSUS_ID, vec![2, 4, 5, 6])
+        .expect("Error storing consensus state");
+
+    host.store_consensus_update_time(ETHEREUM_CONSENSUS_ID, Duration::from_secs(45))
+        .unwrap();
+
+    host.store_latest_commitment_height(height.clone()).unwrap();
+
+    host.storage_consensus.borrow_mut().insert(
+        ETHEREUM_CONSENSUS_ID,
+        DummyClient {
+            consensus_state: vec![2, 4, 5, 6],
+            consensus_id: ETHEREUM_CONSENSUS_ID,
+            state_machine_commitments: vec![IntermediateState {
+                height,
+                commitment: commitment.clone(),
+            }],
+            proof: vec![Proof {
+                height,
+                proof: vec![1, 2, 3, 4],
+            }],
+        },
+    );
+
+    let consensus_proof = host
+        .consensus_proofs
+        .borrow_mut()
+        .get(&ETHEREUM_CONSENSUS_ID)
+        .unwrap()
+        .clone();
+
+    let message = Message::Consensus(ConsensusMessage {
+        consensus_proof: consensus_proof.proof,
+        consensus_client_id: ETHEREUM_CONSENSUS_ID,
+    });
+
+    handle_incoming_message(&host, message.clone()).expect("Error handling message");
 }
 
 fn test_duplicate(host: impl ISMPHost, router: impl ISMPRouter) {
-	todo!()
+    todo!()
     // check_duplicate_request();
 }

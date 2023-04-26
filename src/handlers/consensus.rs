@@ -57,19 +57,22 @@ where
     for intermediate_state in intermediate_states {
         // If a state machine is frozen, we skip it
         if host.is_frozen(intermediate_state.height)? {
-            continue
+            continue;
         }
 
         let previous_latest_height = host.latest_commitment_height(intermediate_state.height.id)?;
 
         // Only allow heights greater than latest height
         if previous_latest_height > intermediate_state.height {
-            continue
+            continue;
         }
 
         // Skip duplicate states
-        if host.state_machine_commitment(intermediate_state.height).is_ok() {
-            continue
+        if host
+            .state_machine_commitment(intermediate_state.height)
+            .is_ok()
+        {
+            continue;
         }
 
         host.store_state_machine_commitment(
@@ -81,8 +84,10 @@ where
         host.store_latest_commitment_height(intermediate_state.height)?;
     }
 
-    let result =
-        ConsensusUpdateResult { consensus_client_id: msg.consensus_client_id, state_updates };
+    let result = ConsensusUpdateResult {
+        consensus_client_id: msg.consensus_client_id,
+        state_updates,
+    };
 
     Ok(MessageResult::ConsensusMessage(result))
 }
@@ -91,18 +96,10 @@ where
 pub fn create_consensus_client<H>(
     host: &H,
     message: CreateConsensusClient,
-) -> Result<MessageResult, Error>
+) -> Result<ConsensusClientCreatedResult, Error>
 where
     H: ISMPHost,
 {
-    // Do not attempt to create a new consensus client if consensus state already exists for the
-    // client
-    if host.consensus_state(message.consensus_client_id).is_ok() {
-        return Err(Error::CannotCreateAlreadyExistingConsensusClient {
-            id: message.consensus_client_id,
-        })
-    }
-
     // Store the initial state for the consensus client
     host.store_consensus_state(message.consensus_client_id, message.consensus_state)?;
 
@@ -112,10 +109,12 @@ where
             intermediate_state.height,
             intermediate_state.commitment,
         )?;
+        host.store_latest_commitment_height(intermediate_state.height)?;
     }
 
     host.store_consensus_update_time(message.consensus_client_id, host.timestamp())?;
 
-    let result = ConsensusClientCreatedResult { consensus_client_id: message.consensus_client_id };
-    Ok(MessageResult::ConsensusClientCreated(result))
+    Ok(ConsensusClientCreatedResult {
+        consensus_client_id: message.consensus_client_id,
+    })
 }
