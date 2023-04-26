@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-#![allow(unused_variables)]
+// #![allow(unused_variables)]
 use crate::{
     consensus::{
         ConsensusClient, ConsensusClientId, IntermediateState, StateCommitment, StateMachineHeight,
@@ -389,7 +389,7 @@ impl ConsensusClient for DummyClient {
 // #[cfg(feature = "ismp_rs_tests")]
 #[test]
 //Test function that checks that the challenge period is elapsed before a new consensus update is allowed
-pub fn create_consensus_message() {
+pub fn create_consensus_message_within_challenge_period() {
     use crate::messaging::{ConsensusMessage, Message, RequestMessage};
 
     let ismp_root = keccak(b"ismp root");
@@ -469,13 +469,22 @@ pub fn create_consensus_message() {
         .unwrap()
         .clone();
 
-    let message = Message::Consensus(ConsensusMessage {
+    let consensus_msg = Message::Consensus(ConsensusMessage {
         consensus_proof: consensus_proof.proof,
         consensus_client_id: ETHEREUM_CONSENSUS_ID,
     });
+    let request_msg = Message::Request(RequestMessage {
+        requests: vec![req],
+        proof: Proof {
+            height,
+            proof: vec![1, 2, 3, 4],
+        },
+    });
 
-    handle_incoming_message(&host, message.clone()).expect("Error handling message");
+    handle_incoming_message(&host, consensus_msg.clone()).expect("Error handling message");
 }
+
+fn check_duplicate_request() {}
 
 fn test_duplicate(host: impl ISMPHost, router: impl ISMPRouter) {
     todo!()
