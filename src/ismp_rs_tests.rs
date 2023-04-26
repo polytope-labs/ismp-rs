@@ -15,8 +15,7 @@ use crate::{
 use alloc::rc::Rc;
 use core::{cell::RefCell, fmt::Debug, time::Duration};
 use keccak_hash::{keccak, H256};
-use std::collections::HashMap;
-use std::time::SystemTime;
+use std::{collections::HashMap, time::SystemTime};
 
 pub type Hash = [u8; 32];
 pub const ETHEREUM_CONSENSUS_ID: u64 = 1;
@@ -80,12 +79,12 @@ impl ISMPRouter for Request {
         let host = DummyHost::new();
         assert_ne!(host.host_state_machine(), request.dest_chain());
         if host.request_commitment.borrow().contains_key(&hash_request::<DummyHost>(&request)) {
-            return Err(DispatchError {
+          return Err(DispatchError {
                 msg: "Duplicate detected!".to_owned(),
                 nonce: request.nonce(),
                 source: host.state_machine_id,
                 dest: request.dest_chain(),
-            });
+            })
         }
 
         if host.host_state_machine() == request.dest_chain() {
@@ -94,7 +93,7 @@ impl ISMPRouter for Request {
                 nonce: request.nonce(),
                 source: host.state_machine_id,
                 dest: request.dest_chain(),
-            });
+            })
         } else {
             assert!(!host
                 .request_commitment
@@ -109,7 +108,7 @@ impl ISMPRouter for Request {
                 nonce: request.nonce(),
                 dest_chain: request.dest_chain(),
                 source_chain: host.state_machine_id,
-            });
+            })
         }
     }
 
@@ -358,7 +357,8 @@ impl ConsensusClient for DummyClient {
 #[cfg(test)]
 // #[cfg(feature = "ismp_rs_tests")]
 #[test]
-//Test function that checks that the challenge period is elapsed before a new consensus update is allowed
+//Test function that checks that the challenge period is elapsed before a new consensus update is
+// allowed
 pub fn create_consensus_message_within_challenge_period() {
     use crate::messaging::{ConsensusMessage, Message, RequestMessage};
 
