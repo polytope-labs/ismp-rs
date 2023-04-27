@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+
 // #![allow(unused_variables)]
 use crate::{
     consensus::{
@@ -136,7 +137,7 @@ impl ISMPHost for DummyHost {
         &self,
         id: crate::consensus::StateMachineId,
     ) -> Result<crate::consensus::StateMachineHeight, Error> {
-        println!("latest_commitment_height {:?}", self.storage_latest_state_machine.borrow());
+        // println!("latest_commitment_height {:?}", self.storage_latest_state_machine.borrow());
         self.storage_latest_state_machine
             .borrow()
             .get(&id)
@@ -432,6 +433,9 @@ pub fn create_consensus_message_within_challenge_period() {
     });
 
     handle_incoming_message(&host, consensus_msg.clone()).expect("Error handling message");
+
+    
+
 }
 
 fn check_duplicate_request() {}
