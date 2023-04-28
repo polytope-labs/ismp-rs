@@ -15,8 +15,12 @@ use crate::{
 };
 use alloc::rc::Rc;
 use core::{cell::RefCell, fmt::Debug, time::Duration};
-use keccak_hash::{keccak, H256};
+
 use std::{collections::HashMap, time::SystemTime};
+
+#[cfg(test)]
+extern crate keccak_hash;
+use keccak_hash::{keccak, H256};
 
 pub type Hash = [u8; 32];
 pub const ETHEREUM_CONSENSUS_ID: u64 = 1;
@@ -293,6 +297,8 @@ impl ISMPHost for DummyHost {
     }
 }
 
+// TODO: Change tests file to subcrate
+
 // Mock client object
 #[derive(Debug, Clone)]
 pub struct DummyClient {
@@ -355,9 +361,11 @@ impl ConsensusClient for DummyClient {
     }
 }
 
-#[cfg(test)]
+
 #[cfg(feature = "ismp_rs_tests")]
 #[test]
+
+
 //Test function that checks that the challenge period is elapsed before a new consensus update is
 // allowed
 pub fn create_consensus_message_within_challenge_period() {
@@ -434,7 +442,7 @@ pub fn create_consensus_message_within_challenge_period() {
 
     handle_incoming_message(&host, consensus_msg.clone()).expect("Error handling message");
 
-    
+
 
 }
 
