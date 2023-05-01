@@ -23,6 +23,7 @@ primitive-types = { version = "0.12.1", default-features = false, features = [
 	"serde_no_std",
 ] }
 ismp = { path = "../ismp" }
+keccak-hash = "0.10.0"
 
 [features]
 default = ["std"]
