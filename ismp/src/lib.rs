@@ -13,4 +13,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! The ismp-rs consensus handler
+//! # The Interoperable State Machine Protocol
+//!
+//! This library is intended to aid state machines communicate over ISMP with other
+//! ISMP supported state machines.
+//!
+//! Note: All timestamps are denominated in seconds
+
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
+extern crate core;
+
+pub mod consensus;
+pub mod error;
+pub mod handlers;
+pub mod host;
+// pub mod ismp_rs_tests;
+pub mod messaging;
+pub mod module;
+pub mod router;
+pub mod util;
+
+pub mod prelude {
+    pub use alloc::{format, str::FromStr, string::String, vec, vec::Vec};
+}

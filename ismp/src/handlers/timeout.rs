@@ -38,7 +38,7 @@ where
                 nonce: request.nonce(),
                 source: request.source_chain(),
                 dest: request.dest_chain(),
-            });
+            })
         }
 
         if !request.timed_out(state.timestamp()) {
