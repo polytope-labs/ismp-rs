@@ -491,7 +491,6 @@ pub fn create_consensus_message_within_challenge_period() {
 
     handle_incoming_message(&host, consensus_msg.clone()).expect("Error handling message");
     // handle_incoming_message(&host, consensus_msg.clone()).expect("Error handling message");
-
 }
 
 #[test]
@@ -544,7 +543,6 @@ fn test_frozen_clients_cant_parse_msgs() {
         },
     );
 
-
     host.store_consensus_state(ETHEREUM_CONSENSUS_ID, vec![2, 4, 5, 6])
         .expect("Error storing consensus state");
 
@@ -588,17 +586,113 @@ fn test_frozen_clients_cant_parse_msgs() {
         },
     });
 
+    // freeze state machine
     host.freeze_state_machine(height.clone()).unwrap();
 
-    // takes in a consensus msg
-    // handle_incoming_message(&host, consensus_msg.clone()).expect("Error handling message");
+
 
     // takes in a request msg
     assert!(handle_incoming_message(&host, request_msg.clone()).is_err());
-    // handle_incoming_message(&host, request_msg.clone()).expect("Error handling message");
 }
 
-fn test_duplicate(host: impl ISMPHost, router: impl ISMPRouter) {
-    todo!()
+#[test]
+fn test_duplicate() {
+    use ismp::messaging::{ConsensusMessage, Message, RequestMessage};
+
+    let ismp_root = keccak(b"ismp root");
+    let state_root = keccak(b"state root");
+
+    let host = DummyHost::new();
+
+    let post_request = Post {
+        source_chain: host.state_machine_id,
+        dest_chain: StateMachine::Arbitrum,
+        nonce: 45,
+        from: vec![1, 2, 3],
+        to: vec![2, 4, 6],
+        timeout_timestamp: Duration::from_secs(45).as_secs(),
+        data: vec![1, 2, 3, 7, 8, 89],
+    };
+
+    let height = StateMachineHeight {
+        id: StateMachineId {
+            state_id: host.state_machine_id.clone(),
+            consensus_client: ETHEREUM_CONSENSUS_ID,
+        },
+        height: 0,
+    };
+    let now = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .expect("Time went backwards")
+        .as_secs();
+    let req = Request::Post(post_request);
+
+    let commitment: StateCommitment = StateCommitment {
+        timestamp: now,
+        ismp_root: Some(ismp_root),
+        state_root,
+    };
+
+    host.storage_state_machine
+        .borrow_mut()
+        .insert(height, commitment.clone());
+
+    host.consensus_proofs.borrow_mut().insert(
+        ETHEREUM_CONSENSUS_ID,
+        Proof {
+            height,
+            proof: vec![1, 2, 3, 4],
+        },
+    );
+
+    host.store_consensus_state(ETHEREUM_CONSENSUS_ID, vec![2, 4, 5, 6])
+        .expect("Error storing consensus state");
+
+
+    // std::thread::sleep(std::time::Duration::from_secs(10));
+
+    host.store_latest_commitment_height(height.clone()).unwrap();
+
+    host.storage_consensus.borrow_mut().insert(
+        ETHEREUM_CONSENSUS_ID,
+        DummyClient {
+            consensus_state: vec![2, 4, 5, 6],
+            consensus_id: ETHEREUM_CONSENSUS_ID,
+            state_machine_commitments: vec![IntermediateState {
+                height,
+                commitment: commitment.clone(),
+            }],
+            proof: vec![Proof {
+                height,
+                proof: vec![1, 2, 3, 4],
+            }],
+        },
+    );
+
+    let consensus_proof = host
+        .consensus_proofs
+        .borrow_mut()
+        .get(&ETHEREUM_CONSENSUS_ID)
+        .unwrap()
+        .clone();
+
+    let consensus_msg = Message::Consensus(ConsensusMessage {
+        consensus_proof: consensus_proof.proof,
+        consensus_client_id: ETHEREUM_CONSENSUS_ID,
+    });
+    let request_msg = Message::Request(RequestMessage {
+        requests: vec![req],
+        proof: Proof {
+            height,
+            proof: vec![1, 2, 3, 4],
+        },
+    });
+
+    handle_incoming_message(&host, consensus_msg.clone()).expect("Error handling message");
+
+    // make thread sleep for 1 second
+
+    println!("is expired: {:?}", host.is_expired(ETHEREUM_CONSENSUS_ID));
+    // todo!()
     // check_duplicate_request();
 }
