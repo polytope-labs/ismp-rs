@@ -24,6 +24,8 @@ primitive-types = { version = "0.12.1", default-features = false, features = [
 ] }
 ismp = { path = "../ismp" }
 keccak-hash = "0.10.0"
+merkle-mountain-range = { package = "ckb-merkle-mountain-range", version = "0.5.2", default-features = false }
+
 
 [features]
 default = ["std"]
