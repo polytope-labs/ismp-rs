@@ -3,6 +3,7 @@ extern crate core;
 
 use keccak_hash::{keccak, H256};
 // use merkle_mountain_range::MerkleProof;
+#![cfg_attr(debug_assertions, allow(dead_code, unused_imports))]
 
 use alloc::rc::Rc;
 use core::{cell::RefCell, fmt::Debug, time::Duration};
