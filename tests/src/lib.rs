@@ -92,17 +92,13 @@ impl ISMPRouter for DummyRequest {
         // to dispatch a request we have to create a new host object
         let host = DummyHost::new();
         assert_ne!(host.host_state_machine(), request.dest_chain());
-        if host
-            .request_commitment
-            .borrow()
-            .contains_key(&hash_request::<DummyHost>(&request))
-        {
+        if host.request_commitment.borrow().contains_key(&hash_request::<DummyHost>(&request)) {
             return Err(DispatchError {
                 msg: "Duplicate detected!".to_owned(),
                 nonce: request.nonce(),
                 source: host.state_machine_id,
                 dest: request.dest_chain(),
-            });
+            })
         }
 
         if host.host_state_machine() == request.dest_chain() {
@@ -159,9 +155,7 @@ impl ISMPHost for DummyHost {
             .borrow()
             .get(&id)
             .cloned()
-            .ok_or(Error::ImplementationSpecific(
-                "Missing latest state machine height".to_string(),
-            ))
+            .ok_or(Error::ImplementationSpecific("Missing latest state machine height".to_string()))
     }
 
     fn state_machine_commitment(
@@ -184,9 +178,7 @@ impl ISMPHost for DummyHost {
     }
 
     fn timestamp(&self) -> core::time::Duration {
-        SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .expect("Time went backwards")
+        SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Time went backwards")
     }
 
     fn is_frozen(&self, height: ismp::consensus::StateMachineHeight) -> Result<bool, Error> {
@@ -202,9 +194,7 @@ impl ISMPHost for DummyHost {
     }
 
     fn store_consensus_state(&self, id: ConsensusClientId, state: Vec<u8>) -> Result<(), Error> {
-        self.storage_consensus_encoded
-            .borrow_mut()
-            .insert(id, state);
+        self.storage_consensus_encoded.borrow_mut().insert(id, state);
 
         Ok(())
     }
@@ -214,9 +204,7 @@ impl ISMPHost for DummyHost {
         id: ConsensusClientId,
         timestamp: core::time::Duration,
     ) -> Result<(), Error> {
-        self.updated_consensus_timestamp
-            .borrow_mut()
-            .insert(id, timestamp);
+        self.updated_consensus_timestamp.borrow_mut().insert(id, timestamp);
         Ok(())
     }
 
@@ -225,9 +213,7 @@ impl ISMPHost for DummyHost {
         height: StateMachineHeight,
         state: StateCommitment,
     ) -> Result<(), Error> {
-        self.storage_state_machine
-            .borrow_mut()
-            .insert(height, state);
+        self.storage_state_machine.borrow_mut().insert(height, state);
         Ok(())
     }
 
@@ -238,9 +224,7 @@ impl ISMPHost for DummyHost {
     }
 
     fn store_latest_commitment_height(&self, height: StateMachineHeight) -> Result<(), Error> {
-        self.storage_latest_state_machine
-            .borrow_mut()
-            .insert(height.id, height);
+        self.storage_latest_state_machine.borrow_mut().insert(height.id, height);
         Ok(())
     }
 
@@ -267,9 +251,7 @@ impl ISMPHost for DummyHost {
 
     fn consensus_update_time(&self, id: ConsensusClientId) -> Result<core::time::Duration, Error> {
         if self.storage_consensus_encoded.borrow().contains_key(&id) {
-            self.updated_consensus_timestamp
-                .borrow_mut()
-                .insert(id, self.timestamp());
+            self.updated_consensus_timestamp.borrow_mut().insert(id, self.timestamp());
             Ok(self.timestamp())
         } else {
             Err(Error::ConsensusStateNotFound { id })
@@ -288,9 +270,7 @@ impl ISMPHost for DummyHost {
         if self.request_commitment.borrow().contains_key(&commitment) {
             Ok(commitment)
         } else {
-            Err(Error::ImplementationSpecific(
-                "Request not found".to_string(),
-            ))
+            Err(Error::ImplementationSpecific("Request not found".to_string()))
         }
     }
 
@@ -344,10 +324,7 @@ impl ConsensusClient for DummyClient {
     ) -> Result<(Vec<u8>, Vec<IntermediateState>), Error> {
         // let mut state = self.state.clone();
 
-        Ok((
-            self.consensus_state.clone(),
-            self.state_machine_commitments.clone(),
-        ))
+        Ok((self.consensus_state.clone(), self.state_machine_commitments.clone()))
     }
 
     fn verify_membership(
@@ -378,9 +355,7 @@ impl ConsensusClient for DummyClient {
         if self.consensus_state == trusted_consensus_state {
             Ok(())
         } else {
-            Err(Error::ImplementationSpecific(
-                "Consensus state not found".to_string(),
-            ))
+            Err(Error::ImplementationSpecific("Consensus state not found".to_string()))
         }
     }
 }
@@ -421,29 +396,19 @@ pub fn create_consensus_message_within_challenge_period() {
         .as_secs();
     let req = Request::Post(post_request);
 
-    let commitment: StateCommitment = StateCommitment {
-        timestamp: now,
-        ismp_root: Some(ismp_root),
-        state_root,
-    };
+    let commitment: StateCommitment =
+        StateCommitment { timestamp: now, ismp_root: Some(ismp_root), state_root };
 
-    host.storage_state_machine
+    host.storage_state_machine.borrow_mut().insert(height, commitment.clone());
+
+    host.consensus_proofs
         .borrow_mut()
-        .insert(height, commitment.clone());
-
-    host.consensus_proofs.borrow_mut().insert(
-        ETHEREUM_CONSENSUS_ID,
-        Proof {
-            height,
-            proof: vec![1, 2, 3, 4],
-        },
-    );
+        .insert(ETHEREUM_CONSENSUS_ID, Proof { height, proof: vec![1, 2, 3, 4] });
 
     host.store_consensus_state(ETHEREUM_CONSENSUS_ID, vec![2, 4, 5, 6])
         .expect("Error storing consensus state");
 
-    host.store_consensus_update_time(ETHEREUM_CONSENSUS_ID, Duration::from_secs(45))
-        .unwrap();
+    host.store_consensus_update_time(ETHEREUM_CONSENSUS_ID, Duration::from_secs(45)).unwrap();
 
     host.store_latest_commitment_height(height.clone()).unwrap();
 
@@ -456,19 +421,12 @@ pub fn create_consensus_message_within_challenge_period() {
                 height,
                 commitment: commitment.clone(),
             }],
-            proof: vec![Proof {
-                height,
-                proof: vec![1, 2, 3, 4],
-            }],
+            proof: vec![Proof { height, proof: vec![1, 2, 3, 4] }],
         },
     );
 
-    let consensus_proof = host
-        .consensus_proofs
-        .borrow_mut()
-        .get(&ETHEREUM_CONSENSUS_ID)
-        .unwrap()
-        .clone();
+    let consensus_proof =
+        host.consensus_proofs.borrow_mut().get(&ETHEREUM_CONSENSUS_ID).unwrap().clone();
 
     let consensus_msg = Message::Consensus(ConsensusMessage {
         consensus_proof: consensus_proof.proof,
@@ -476,10 +434,7 @@ pub fn create_consensus_message_within_challenge_period() {
     });
     let request_msg = Message::Request(RequestMessage {
         requests: vec![req],
-        proof: Proof {
-            height,
-            proof: vec![1, 2, 3, 4],
-        },
+        proof: Proof { height, proof: vec![1, 2, 3, 4] },
     });
 
     handle_incoming_message(&host, consensus_msg.clone()).expect("Error handling message");
@@ -518,29 +473,19 @@ fn test_frozen_clients_cant_parse_msgs() {
         .as_secs();
     let req = Request::Post(post_request);
 
-    let commitment: StateCommitment = StateCommitment {
-        timestamp: now,
-        ismp_root: Some(ismp_root),
-        state_root,
-    };
+    let commitment: StateCommitment =
+        StateCommitment { timestamp: now, ismp_root: Some(ismp_root), state_root };
 
-    host.storage_state_machine
+    host.storage_state_machine.borrow_mut().insert(height, commitment.clone());
+
+    host.consensus_proofs
         .borrow_mut()
-        .insert(height, commitment.clone());
-
-    host.consensus_proofs.borrow_mut().insert(
-        ETHEREUM_CONSENSUS_ID,
-        Proof {
-            height,
-            proof: vec![1, 2, 3, 4],
-        },
-    );
+        .insert(ETHEREUM_CONSENSUS_ID, Proof { height, proof: vec![1, 2, 3, 4] });
 
     host.store_consensus_state(ETHEREUM_CONSENSUS_ID, vec![2, 4, 5, 6])
         .expect("Error storing consensus state");
 
-    host.store_consensus_update_time(ETHEREUM_CONSENSUS_ID, Duration::from_secs(45))
-        .unwrap();
+    host.store_consensus_update_time(ETHEREUM_CONSENSUS_ID, Duration::from_secs(45)).unwrap();
 
     host.store_latest_commitment_height(height.clone()).unwrap();
 
@@ -553,19 +498,12 @@ fn test_frozen_clients_cant_parse_msgs() {
                 height,
                 commitment: commitment.clone(),
             }],
-            proof: vec![Proof {
-                height,
-                proof: vec![1, 2, 3, 4],
-            }],
+            proof: vec![Proof { height, proof: vec![1, 2, 3, 4] }],
         },
     );
 
-    let consensus_proof = host
-        .consensus_proofs
-        .borrow_mut()
-        .get(&ETHEREUM_CONSENSUS_ID)
-        .unwrap()
-        .clone();
+    let consensus_proof =
+        host.consensus_proofs.borrow_mut().get(&ETHEREUM_CONSENSUS_ID).unwrap().clone();
 
     let consensus_msg = Message::Consensus(ConsensusMessage {
         consensus_proof: consensus_proof.proof,
@@ -573,10 +511,7 @@ fn test_frozen_clients_cant_parse_msgs() {
     });
     let request_msg = Message::Request(RequestMessage {
         requests: vec![req],
-        proof: Proof {
-            height,
-            proof: vec![1, 2, 3, 4],
-        },
+        proof: Proof { height, proof: vec![1, 2, 3, 4] },
     });
 
     // freeze state machine
@@ -618,23 +553,14 @@ fn test_duplicate() {
         .as_secs();
     let req = Request::Post(post_request);
 
-    let commitment: StateCommitment = StateCommitment {
-        timestamp: now,
-        ismp_root: Some(ismp_root),
-        state_root,
-    };
+    let commitment: StateCommitment =
+        StateCommitment { timestamp: now, ismp_root: Some(ismp_root), state_root };
 
-    host.storage_state_machine
+    host.storage_state_machine.borrow_mut().insert(height, commitment.clone());
+
+    host.consensus_proofs
         .borrow_mut()
-        .insert(height, commitment.clone());
-
-    host.consensus_proofs.borrow_mut().insert(
-        ETHEREUM_CONSENSUS_ID,
-        Proof {
-            height,
-            proof: vec![1, 2, 3, 4],
-        },
-    );
+        .insert(ETHEREUM_CONSENSUS_ID, Proof { height, proof: vec![1, 2, 3, 4] });
 
     host.store_consensus_state(ETHEREUM_CONSENSUS_ID, vec![2, 4, 5, 6])
         .expect("Error storing consensus state");
@@ -652,19 +578,12 @@ fn test_duplicate() {
                 height,
                 commitment: commitment.clone(),
             }],
-            proof: vec![Proof {
-                height,
-                proof: vec![1, 2, 3, 4],
-            }],
+            proof: vec![Proof { height, proof: vec![1, 2, 3, 4] }],
         },
     );
 
-    let consensus_proof = host
-        .consensus_proofs
-        .borrow_mut()
-        .get(&ETHEREUM_CONSENSUS_ID)
-        .unwrap()
-        .clone();
+    let consensus_proof =
+        host.consensus_proofs.borrow_mut().get(&ETHEREUM_CONSENSUS_ID).unwrap().clone();
 
     let consensus_msg = Message::Consensus(ConsensusMessage {
         consensus_proof: consensus_proof.proof,
@@ -672,10 +591,7 @@ fn test_duplicate() {
     });
     let request_msg = Message::Request(RequestMessage {
         requests: vec![req],
-        proof: Proof {
-            height,
-            proof: vec![1, 2, 3, 4],
-        },
+        proof: Proof { height, proof: vec![1, 2, 3, 4] },
     });
 
     handle_incoming_message(&host, consensus_msg.clone()).expect("Error handling message");
