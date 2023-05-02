@@ -1,0 +1,109 @@
+// Copyright (C) Polytope Labs Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+//! ISMP handler definitions
+
+use crate::{
+    consensus::{ConsensusClient, ConsensusClientId, StateMachineHeight},
+    error::Error,
+    host::ISMPHost,
+    messaging::{Message, Proof},
+    router::DispatchResult,
+};
+use alloc::{boxed::Box, collections::BTreeSet, vec::Vec};
+
+mod consensus;
+mod request;
+mod response;
+mod timeout;
+
+pub use consensus::create_consensus_client;
+
+pub struct ConsensusUpdateResult {
+    /// Consensus client Id
+    pub consensus_client_id: ConsensusClientId,
+    /// Tuple of previous latest height and new latest height for a state machine
+    pub state_updates: BTreeSet<(StateMachineHeight, StateMachineHeight)>,
+}
+
+pub struct ConsensusClientCreatedResult {
+    /// Consensus client Id
+    pub consensus_client_id: ConsensusClientId,
+}
+
+/// Result returned when ismp messages are handled successfully
+pub enum MessageResult {
+    ConsensusMessage(ConsensusUpdateResult),
+    Request(Vec<DispatchResult>),
+    Response(Vec<DispatchResult>),
+    Timeout(Vec<DispatchResult>),
+}
+
+/// This function serves as an entry point to handle the message types provided by the ISMP protocol
+pub fn handle_incoming_message<H>(host: &H, message: Message) -> Result<MessageResult, Error>
+where
+    H: ISMPHost,
+{
+    match message {
+        Message::Consensus(consensus_message) => consensus::handle(host, consensus_message),
+        Message::Request(req) => request::handle(host, req),
+        Message::Response(resp) => response::handle(host, resp),
+        Message::Timeout(timeout) => timeout::handle(host, timeout),
+    }
+}
+
+/// This function checks to see that the delay period configured on the host chain
+/// for the state machine has elasped.
+fn verify_delay_passed<H>(host: &H, proof_height: StateMachineHeight) -> Result<bool, Error>
+where
+    H: ISMPHost,
+{
+    let update_time = host.consensus_update_time(proof_height.id.consensus_client)?;
+    let delay_period = host.challenge_period(proof_height.id.consensus_client);
+    let current_timestamp = host.timestamp();
+    Ok(current_timestamp - update_time > delay_period)
+}
+
+/// This function does the preliminary checks for a request or response message
+/// - It ensures the consensus client is not frozen
+/// - It ensures the state machine is not frozen
+/// - Checks that the delay period configured for the state machine has elaspsed.
+fn validate_state_machine<H>(host: &H, proof: &Proof) -> Result<Box<dyn ConsensusClient>, Error>
+where
+    H: ISMPHost,
+{
+    // Ensure consensus client is not frozen
+    let consensus_client_id = proof.height.id.consensus_client;
+    let consensus_client = host.consensus_client(consensus_client_id)?;
+    let consensus_state = host.consensus_state(consensus_client_id)?;
+    // Ensure client is not frozen
+    consensus_client.is_frozen(&consensus_state)?;
+
+    // Ensure state machine is not frozen
+    if host.is_frozen(proof.height)? {
+        return Err(Error::FrozenStateMachine { height: proof.height })
+    }
+
+    // Ensure delay period has elapsed
+    if !verify_delay_passed(host, proof.height)? {
+        return Err(Error::ChallengePeriodNotElapsed {
+            consensus_id: consensus_client_id,
+            current_time: host.timestamp(),
+            update_time: host.consensus_update_time(proof.height.id.consensus_client)?,
+        })
+    }
+
+    Ok(consensus_client)
+}

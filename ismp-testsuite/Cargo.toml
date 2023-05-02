@@ -1,0 +1,33 @@
+[package]
+name = "ismp-testsuite"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
+	"derive",
+] }
+derive_more = { version = "0.99.17", default-features = false, features = [
+	"from",
+	"into",
+	"display",
+] }
+scale-info = { version = "2.1.1", default-features = false, features = [
+	"derive",
+] }
+serde = { version = "1.0.136", features = ["derive"], optional = true }
+primitive-types = { version = "0.12.1", default-features = false, features = [
+	"scale-info",
+	"serde_no_std",
+] }
+ismp = { path = "../ismp"}
+keccak-hash = "0.10.0"
+merkle-mountain-range = { package = "ckb-merkle-mountain-range", version = "0.5.2", default-features = false }
+
+
+[features]
+default = ["std"]
+std = ["codec/std", "scale-info/std", "serde", "primitive-types/std"]
+
