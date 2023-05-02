@@ -1,5 +1,6 @@
 extern crate alloc;
 extern crate core;
+extern crate ismp;
 
 #[allow(unused_imports)]
 use keccak_hash::{keccak, H256};
@@ -21,6 +22,7 @@ use ismp::{
 use std::{collections::HashMap, time::SystemTime};
 
 #[cfg(test)]
+#[cfg(feature = "ismp_rs_tests")]
 
 pub type Hash = [u8; 32];
 pub const ETHEREUM_CONSENSUS_ID: u64 = 1;
@@ -357,7 +359,6 @@ impl ConsensusClient for DummyClient {
     }
 }
 
-// #[cfg(feature = "ismp_rs_tests")]
 #[test]
 
 //Test function that checks that the challenge period is elapsed before a new consensus update is

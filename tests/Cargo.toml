@@ -22,7 +22,7 @@ primitive-types = { version = "0.12.1", default-features = false, features = [
 	"scale-info",
 	"serde_no_std",
 ] }
-ismp = { path = "../ismp" }
+ismp = { path = "../ismp", optional = true}
 keccak-hash = "0.10.0"
 merkle-mountain-range = { package = "ckb-merkle-mountain-range", version = "0.5.2", default-features = false }
 
@@ -30,3 +30,4 @@ merkle-mountain-range = { package = "ckb-merkle-mountain-range", version = "0.5.
 [features]
 default = ["std"]
 std = ["codec/std", "scale-info/std", "serde", "primitive-types/std"]
+ismp_rs_tests = ["ismp"]
