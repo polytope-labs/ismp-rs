@@ -1,6 +1,6 @@
 extern crate alloc;
 extern crate core;
-extern crate ismp;
+// extern crate ismp;
 
 #[allow(unused_imports)]
 use keccak_hash::{keccak, H256};
