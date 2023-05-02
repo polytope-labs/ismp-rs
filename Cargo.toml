@@ -1,10 +1,3 @@
-[package]
-name = "ismp-rs"
-version = "0.1.0"
-edition = "2021"
-description = "Rust implementation of the ISMP protocol"
-authors = ["Polytope Labs <hello@polytope.technology>"]
-
+[workspace]
 members = ["tests", "ismp"]
-
-
+resolver = "2"
