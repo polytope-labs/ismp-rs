@@ -1,9 +1,8 @@
 extern crate alloc;
 extern crate core;
 
+#[allow(unused_imports)]
 use keccak_hash::{keccak, H256};
-// use merkle_mountain_range::MerkleProof;
-#![cfg_attr(debug_assertions, allow(dead_code, unused_imports))]
 
 use alloc::rc::Rc;
 use core::{cell::RefCell, fmt::Debug, time::Duration};
@@ -23,8 +22,6 @@ use ismp::{
 use std::{collections::HashMap, time::SystemTime};
 
 #[cfg(test)]
-// extern crate keccak_hash;
-// use keccak_hash::{keccak, H256};
 
 pub type Hash = [u8; 32];
 pub const ETHEREUM_CONSENSUS_ID: u64 = 1;
