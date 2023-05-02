@@ -91,7 +91,7 @@ impl ISMPRouter for DummyRequest {
         let host = DummyHost::new();
         assert_ne!(host.host_state_machine(), request.dest_chain());
         if host.request_commitment.borrow().contains_key(&hash_request::<DummyHost>(&request)) {
-            return Err(DispatchError {
+            Err(DispatchError {
                 msg: "Duplicate detected!".to_owned(),
                 nonce: request.nonce(),
                 source: host.state_machine_id,
@@ -383,7 +383,7 @@ pub fn create_consensus_message_within_challenge_period() {
 
     let height = StateMachineHeight {
         id: StateMachineId {
-            state_id: host.state_machine_id.clone(),
+            state_id: host.state_machine_id,
             consensus_client: ETHEREUM_CONSENSUS_ID,
         },
         height: 0,
@@ -399,26 +399,22 @@ pub fn create_consensus_message_within_challenge_period() {
 
     host.storage_state_machine.borrow_mut().insert(height, commitment.clone());
 
-    host.consensus_proofs
-        .borrow_mut()
-        .insert(ETHEREUM_CONSENSUS_ID, Proof { height, proof: vec![1, 2, 3, 4] });
+    host.consensus_proofs.borrow_mut()..
+        insert(ETHEREUM_CONSENSUS_ID, Proof { height, proof: vec![1, 2, 3, 4] });
 
     host.store_consensus_state(ETHEREUM_CONSENSUS_ID, vec![2, 4, 5, 6])
         .expect("Error storing consensus state");
 
     host.store_consensus_update_time(ETHEREUM_CONSENSUS_ID, Duration::from_secs(45)).unwrap();
 
-    host.store_latest_commitment_height(height.clone()).unwrap();
+    host.store_latest_commitment_height(height).unwrap();
 
     host.storage_consensus.borrow_mut().insert(
         ETHEREUM_CONSENSUS_ID,
         DummyClient {
             consensus_state: vec![2, 4, 5, 6],
             consensus_id: ETHEREUM_CONSENSUS_ID,
-            state_machine_commitments: vec![IntermediateState {
-                height,
-                commitment: commitment.clone(),
-            }],
+            state_machine_commitments: vec![IntermediateState { height, commitment }],
             proof: vec![Proof { height, proof: vec![1, 2, 3, 4] }],
         },
     );
@@ -435,7 +431,7 @@ pub fn create_consensus_message_within_challenge_period() {
         proof: Proof { height, proof: vec![1, 2, 3, 4] },
     });
 
-    handle_incoming_message(&host, consensus_msg.clone()).expect("Error handling message");
+    handle_incoming_message(&host, consensus_msg).expect("Error handling message");
     // handle_incoming_message(&host, consensus_msg.clone()).expect("Error handling message");
 }
 
@@ -460,7 +456,7 @@ fn test_frozen_clients_cant_parse_msgs() {
 
     let height = StateMachineHeight {
         id: StateMachineId {
-            state_id: host.state_machine_id.clone(),
+            state_id: host.state_machine_id,
             consensus_client: ETHEREUM_CONSENSUS_ID,
         },
         height: 0,
@@ -480,22 +476,18 @@ fn test_frozen_clients_cant_parse_msgs() {
         .borrow_mut()
         .insert(ETHEREUM_CONSENSUS_ID, Proof { height, proof: vec![1, 2, 3, 4] });
 
-    host.store_consensus_state(ETHEREUM_CONSENSUS_ID, vec![2, 4, 5, 6])
-        .expect("Error storing consensus state");
+    host.store_consensus_update_time(ETHEREUM_CONSENSUS_ID, Duration::from_secs(45)).unwrap();
 
     host.store_consensus_update_time(ETHEREUM_CONSENSUS_ID, Duration::from_secs(45)).unwrap();
 
-    host.store_latest_commitment_height(height.clone()).unwrap();
+    host.store_latest_commitment_height(height).unwrap();
 
     host.storage_consensus.borrow_mut().insert(
         ETHEREUM_CONSENSUS_ID,
         DummyClient {
             consensus_state: vec![2, 4, 5, 6],
             consensus_id: ETHEREUM_CONSENSUS_ID,
-            state_machine_commitments: vec![IntermediateState {
-                height,
-                commitment: commitment.clone(),
-            }],
+            state_machine_commitments: vec![IntermediateState { height, commitment }],
             proof: vec![Proof { height, proof: vec![1, 2, 3, 4] }],
         },
     );
@@ -513,10 +505,10 @@ fn test_frozen_clients_cant_parse_msgs() {
     });
 
     // freeze state machine
-    host.freeze_state_machine(height.clone()).unwrap();
+    host.freeze_state_machine(height).unwrap();
 
     // takes in a request msg
-    assert!(handle_incoming_message(&host, request_msg.clone()).is_err());
+    assert!(handle_incoming_message(&host, request_msg).is_err());
 }
 
 #[test]
@@ -540,7 +532,7 @@ fn test_duplicate() {
 
     let height = StateMachineHeight {
         id: StateMachineId {
-            state_id: host.state_machine_id.clone(),
+            state_id: host.state_machine_id,
             consensus_client: ETHEREUM_CONSENSUS_ID,
         },
         height: 0,
@@ -565,17 +557,14 @@ fn test_duplicate() {
 
     // std::thread::sleep(std::time::Duration::from_secs(10));
 
-    host.store_latest_commitment_height(height.clone()).unwrap();
+    host.store_latest_commitment_height(height).unwrap();
 
     host.storage_consensus.borrow_mut().insert(
         ETHEREUM_CONSENSUS_ID,
         DummyClient {
             consensus_state: vec![2, 4, 5, 6],
             consensus_id: ETHEREUM_CONSENSUS_ID,
-            state_machine_commitments: vec![IntermediateState {
-                height,
-                commitment: commitment.clone(),
-            }],
+            state_machine_commitments: vec![IntermediateState { height, commitment }],
             proof: vec![Proof { height, proof: vec![1, 2, 3, 4] }],
         },
     );
@@ -592,7 +581,7 @@ fn test_duplicate() {
         proof: Proof { height, proof: vec![1, 2, 3, 4] },
     });
 
-    handle_incoming_message(&host, consensus_msg.clone()).expect("Error handling message");
+    handle_incoming_message(&host, consensus_msg).expect("Error handling message");
 
     // make thread sleep for 1 second
 
