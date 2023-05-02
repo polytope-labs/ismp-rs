@@ -12,7 +12,6 @@ use ismp::{
         StateMachineId,
     },
     error::Error,
-    handlers::handle_incoming_message,
     host::{ISMPHost, StateMachine},
     messaging::Proof,
     router::{DispatchError, DispatchSuccess, ISMPRouter, Post, Request, RequestResponse},
@@ -86,12 +85,12 @@ enum DummyRequest {
 
 impl ISMPRouter for DummyRequest {
     // dispatching request to the host
-    fn dispatch(&self, request: ismp::router::Request) -> Result<DispatchSuccess, DispatchError> {
+    fn dispatch(&self, request: ismp::router::Request) -> Result<(), DispatchError> {
         // to dispatch a request we have to create a new host object
         let host = DummyHost::new();
         assert_ne!(host.host_state_machine(), request.dest_chain());
         if host.request_commitment.borrow().contains_key(&hash_request::<DummyHost>(&request)) {
-            Err(DispatchError {
+            return Err(DispatchError {
                 msg: "Duplicate detected!".to_owned(),
                 nonce: request.nonce(),
                 source: host.state_machine_id,
@@ -100,7 +99,7 @@ impl ISMPRouter for DummyRequest {
         }
 
         if host.host_state_machine() == request.dest_chain() {
-            Err(DispatchError {
+            return Err(DispatchError {
                 msg: "Duplicate detected!".to_owned(),
                 nonce: request.nonce(),
                 source: host.state_machine_id,
@@ -116,25 +115,15 @@ impl ISMPRouter for DummyRequest {
                 .borrow_mut()
                 .insert(hash_request::<DummyHost>(&request), request.clone());
 
-            Ok(DispatchSuccess {
-                nonce: request.nonce(),
-                dest_chain: request.dest_chain(),
-                source_chain: host.state_machine_id,
-            })
+            Ok(())
         }
     }
 
-    fn dispatch_timeout(
-        &self,
-        _request: ismp::router::Request,
-    ) -> Result<DispatchSuccess, DispatchError> {
+    fn dispatch_timeout(&self, _request: ismp::router::Request) -> Result<(), DispatchError> {
         todo!()
     }
 
-    fn write_response(
-        &self,
-        _response: ismp::router::Response,
-    ) -> Result<DispatchSuccess, DispatchError> {
+    fn write_response(&self, _response: ismp::router::Response) -> Result<(), DispatchError> {
         todo!()
     }
 }
@@ -229,7 +218,7 @@ impl ISMPHost for DummyHost {
     fn challenge_period(&self, id: ConsensusClientId) -> core::time::Duration {
         match id {
             id if id == ETHEREUM_CONSENSUS_ID => Duration::from_secs(0),
-            _ => Duration::from_secs(01),
+            _ => Duration::from_secs(0o1),
         }
     }
 
@@ -399,8 +388,9 @@ pub fn create_consensus_message_within_challenge_period() {
 
     host.storage_state_machine.borrow_mut().insert(height, commitment.clone());
 
-    host.consensus_proofs.borrow_mut()..
-        insert(ETHEREUM_CONSENSUS_ID, Proof { height, proof: vec![1, 2, 3, 4] });
+    host.consensus_proofs
+        .borrow_mut()
+        .insert(ETHEREUM_CONSENSUS_ID, Proof { height, proof: vec![1, 2, 3, 4] });
 
     host.store_consensus_state(ETHEREUM_CONSENSUS_ID, vec![2, 4, 5, 6])
         .expect("Error storing consensus state");
@@ -431,7 +421,7 @@ pub fn create_consensus_message_within_challenge_period() {
         proof: Proof { height, proof: vec![1, 2, 3, 4] },
     });
 
-    handle_incoming_message(&host, consensus_msg).expect("Error handling message");
+    ismp::handlers::handle_incoming_message(&host, consensus_msg).expect("Error handling message");
     // handle_incoming_message(&host, consensus_msg.clone()).expect("Error handling message");
 }
 
@@ -508,7 +498,7 @@ fn test_frozen_clients_cant_parse_msgs() {
     host.freeze_state_machine(height).unwrap();
 
     // takes in a request msg
-    assert!(handle_incoming_message(&host, request_msg).is_err());
+    assert!(ismp::handlers::handle_incoming_message(&host, request_msg).is_err());
 }
 
 #[test]
@@ -581,7 +571,7 @@ fn test_duplicate() {
         proof: Proof { height, proof: vec![1, 2, 3, 4] },
     });
 
-    handle_incoming_message(&host, consensus_msg).expect("Error handling message");
+    ismp::handlers::handle_incoming_message(&host, consensus_msg).expect("Error handling message");
 
     // make thread sleep for 1 second
 
