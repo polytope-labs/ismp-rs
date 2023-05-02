@@ -14,7 +14,7 @@ use ismp::{
     error::Error,
     host::{ISMPHost, StateMachine},
     messaging::Proof,
-    router::{DispatchError, DispatchSuccess, ISMPRouter, Post, Request, RequestResponse},
+    router::{DispatchError, ISMPRouter, Post, Request, RequestResponse},
     util::hash_request,
 };
 
@@ -99,7 +99,7 @@ impl ISMPRouter for DummyRequest {
         }
 
         if host.host_state_machine() == request.dest_chain() {
-            return Err(DispatchError {
+            Err(DispatchError {
                 msg: "Duplicate detected!".to_owned(),
                 nonce: request.nonce(),
                 source: host.state_machine_id,
@@ -416,7 +416,7 @@ pub fn create_consensus_message_within_challenge_period() {
         consensus_proof: consensus_proof.proof,
         consensus_client_id: ETHEREUM_CONSENSUS_ID,
     });
-    let request_msg = Message::Request(RequestMessage {
+    let _request_msg = Message::Request(RequestMessage {
         requests: vec![req],
         proof: Proof { height, proof: vec![1, 2, 3, 4] },
     });
@@ -485,7 +485,7 @@ fn test_frozen_clients_cant_parse_msgs() {
     let consensus_proof =
         host.consensus_proofs.borrow_mut().get(&ETHEREUM_CONSENSUS_ID).unwrap().clone();
 
-    let consensus_msg = Message::Consensus(ConsensusMessage {
+    let _consensus_msg = Message::Consensus(ConsensusMessage {
         consensus_proof: consensus_proof.proof,
         consensus_client_id: ETHEREUM_CONSENSUS_ID,
     });
@@ -566,7 +566,7 @@ fn test_duplicate() {
         consensus_proof: consensus_proof.proof,
         consensus_client_id: ETHEREUM_CONSENSUS_ID,
     });
-    let request_msg = Message::Request(RequestMessage {
+    let _request_msg = Message::Request(RequestMessage {
         requests: vec![req],
         proof: Proof { height, proof: vec![1, 2, 3, 4] },
     });
