@@ -1,11 +1,9 @@
-#![allow(dead_code)]
 extern crate alloc;
 extern crate core;
 
 use keccak_hash::{keccak, H256};
-use merkle_mountain_range::MerkleProof;
+// use merkle_mountain_range::MerkleProof;
 
-// #![allow(unused_variables)]
 use alloc::rc::Rc;
 use core::{cell::RefCell, fmt::Debug, time::Duration};
 use ismp::{
@@ -14,10 +12,10 @@ use ismp::{
         StateMachineId,
     },
     error::Error,
-    handlers::handle_incoming_message,
+    // handlers::handle_incoming_message,
     host::{ISMPHost, StateMachine},
     messaging::Proof,
-    router::{DispatchError, DispatchSuccess, Get, ISMPRouter, Post, Request, RequestResponse},
+    router::{DispatchError, DispatchSuccess, ISMPRouter, Post, Request, RequestResponse},
     util::hash_request,
 };
 
@@ -31,6 +29,7 @@ pub type Hash = [u8; 32];
 pub const ETHEREUM_CONSENSUS_ID: u64 = 1;
 
 // Mock host object
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 struct DummyHost {
     storage_state_machine: Rc<RefCell<HashMap<StateMachineHeight, StateCommitment>>>,
@@ -83,12 +82,8 @@ impl DummyHost {
 }
 
 enum DummyRequest {
-    /// A post request allows a module on a state machine to send arbitrary bytes to another module
-    /// living in another state machine.
     Post(Post),
-    /// A get request allows a module on a state machine to read the storage of another module
-    /// living in another state machine.
-    Get(Get),
+    // Get(Get),
 }
 
 impl ISMPRouter for DummyRequest {
@@ -133,14 +128,14 @@ impl ISMPRouter for DummyRequest {
 
     fn dispatch_timeout(
         &self,
-        request: ismp::router::Request,
+        _request: ismp::router::Request,
     ) -> Result<DispatchSuccess, DispatchError> {
         todo!()
     }
 
     fn write_response(
         &self,
-        response: ismp::router::Response,
+        _response: ismp::router::Response,
     ) -> Result<DispatchSuccess, DispatchError> {
         todo!()
     }
@@ -323,9 +318,9 @@ impl ConsensusClient for DummyClient {
 
     fn verify_consensus(
         &self,
-        host: &dyn ISMPHost,
-        trusted_consensus_state: Vec<u8>,
-        proof: Vec<u8>,
+        _host: &dyn ISMPHost,
+        _trusted_consensus_state: Vec<u8>,
+        _proof: Vec<u8>,
     ) -> Result<(Vec<u8>, Vec<IntermediateState>), Error> {
         // let mut state = self.state.clone();
 
@@ -334,24 +329,24 @@ impl ConsensusClient for DummyClient {
 
     fn verify_membership(
         &self,
-        host: &dyn ISMPHost,
-        item: RequestResponse,
-        root: StateCommitment,
-        proof: &ismp::messaging::Proof,
+        _host: &dyn ISMPHost,
+        _item: RequestResponse,
+        _root: StateCommitment,
+        _proof: &ismp::messaging::Proof,
     ) -> Result<(), Error> {
         Ok(())
     }
 
-    fn state_trie_key(&self, request: RequestResponse) -> Vec<Vec<u8>> {
+    fn state_trie_key(&self, _request: RequestResponse) -> Vec<Vec<u8>> {
         todo!()
     }
 
     fn verify_state_proof(
         &self,
-        host: &dyn ISMPHost,
-        key: Vec<Vec<u8>>,
-        root: StateCommitment,
-        proof: &ismp::messaging::Proof,
+        _host: &dyn ISMPHost,
+        _key: Vec<Vec<u8>>,
+        _root: StateCommitment,
+        _proof: &ismp::messaging::Proof,
     ) -> Result<Vec<std::option::Option<Vec<u8>>>, Error> {
         todo!()
     }
