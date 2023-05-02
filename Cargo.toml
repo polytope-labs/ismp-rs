@@ -1,2 +1,3 @@
 [workspace]
 members = ["ismp-testsuite", "ismp"]
+resolver = "2"
