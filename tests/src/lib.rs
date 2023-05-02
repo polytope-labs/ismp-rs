@@ -14,7 +14,7 @@ use ismp::{
     error::Error,
     host::{ISMPHost, StateMachine},
     messaging::Proof,
-    router::{DispatchError, ISMPRouter, Post, Request, RequestResponse},
+    router::{DispatchError, DispatchSuccess, ISMPRouter, Post, Request, RequestResponse},
     util::hash_request,
 };
 
@@ -85,7 +85,7 @@ enum DummyRequest {
 
 impl ISMPRouter for DummyRequest {
     // dispatching request to the host
-    fn dispatch(&self, request: ismp::router::Request) -> Result<(), DispatchError> {
+    fn dispatch(&self, request: ismp::router::Request) -> Result<DispatchSuccess, DispatchError> {
         // to dispatch a request we have to create a new host object
         let host = DummyHost::new();
         assert_ne!(host.host_state_machine(), request.dest_chain());
@@ -115,15 +115,25 @@ impl ISMPRouter for DummyRequest {
                 .borrow_mut()
                 .insert(hash_request::<DummyHost>(&request), request.clone());
 
-            Ok(())
+            Ok(DispatchSuccess {
+                nonce: request.nonce(),
+                source_chain: host.state_machine_id,
+                dest_chain: request.dest_chain(),
+            })
         }
     }
 
-    fn dispatch_timeout(&self, _request: ismp::router::Request) -> Result<(), DispatchError> {
+    fn dispatch_timeout(
+        &self,
+        _request: ismp::router::Request,
+    ) -> Result<DispatchSuccess, DispatchError> {
         todo!()
     }
 
-    fn write_response(&self, _response: ismp::router::Response) -> Result<(), DispatchError> {
+    fn write_response(
+        &self,
+        _response: ismp::router::Response,
+    ) -> Result<DispatchSuccess, DispatchError> {
         todo!()
     }
 }
