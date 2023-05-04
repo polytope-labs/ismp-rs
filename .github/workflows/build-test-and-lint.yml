@@ -32,6 +32,9 @@ jobs:
 
       - name: Build `no-std`
         run:  cargo +nightly build -p ismp --no-default-features --verbose --target=wasm32-unknown-unknown
+
+      - name: Run tests
+        run: cargo +nightly test --all-features --workspace --verbose
       
   lint:
     runs-on: ubuntu-latest
