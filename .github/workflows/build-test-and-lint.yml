@@ -9,6 +9,8 @@ on:
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
+    workspace: 
+      path: ismp
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
@@ -32,10 +34,34 @@ jobs:
 
       - name: Build `no-std`
         run:  cargo +nightly build --no-default-features --verbose --target=wasm32-unknown-unknown
+  
+  ismp-testsuite: 
+    runs-on: ubuntu-latest
+    workspace:
+      path: ismp-testsuite
+    steps: 
+      - name: Checkout sources
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          submodules: recursive
+
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt, clippy
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      
+      - name: Build
+        run:  cargo +nightly check --all --benches
 
       - name: Run tests
         run: cargo +nightly test --all-features --verbose
-
+      
   lint:
     runs-on: ubuntu-latest
     steps:
