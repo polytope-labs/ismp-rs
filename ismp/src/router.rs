@@ -89,7 +89,7 @@ pub enum StorageKind {
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct EvmStorage {
     pub slot: u64,
-    pub evm_storage_type: EvmStorageType
+    pub evm_storage_type: EvmStorageType,
 }
 
 /// The Storage Type for EVM Get Request.
@@ -103,7 +103,7 @@ pub enum EvmStorageType {
     /// An EVM Array
     Array,
     /// An EVM Map
-    Map
+    Map,
 }
 
 impl Request {
