@@ -48,6 +48,8 @@ pub struct Get {
     pub source_chain: StateMachine,
     /// The destination state machine of this request.
     pub dest_chain: StateMachine,
+    /// Storage kind
+    pub storage_kind: StorageKind,
     /// The nonce of this request on the source chain
     pub nonce: u64,
     /// Moudle Id of the sending module
@@ -70,6 +72,38 @@ pub enum Request {
     /// A get request allows a module on a state machine to read the storage of another module
     /// living in another state machine.
     Get(Get),
+}
+
+/// The Storage Kind for GET request.
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
+pub enum StorageKind {
+    /// This indicates that we are trying to get an Evm storage
+    EVM(EvmStorage),
+    /// This indicates that we are trying to get a Substrate storage
+    Substrate,
+}
+
+/// The Storage Type for EVM Get Request.
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
+pub struct EvmStorage {
+    pub slot: u64,
+    pub evm_storage_type: EvmStorageType
+}
+
+/// The Storage Type for EVM Get Request.
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
+pub enum EvmStorageType {
+    /// An EVM Address
+    Address,
+    /// An EVM Primitive value
+    Primitive,
+    /// An EVM Array
+    Array,
+    /// An EVM Map
+    Map
 }
 
 impl Request {
