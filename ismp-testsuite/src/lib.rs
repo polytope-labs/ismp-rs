@@ -14,3 +14,47 @@
 // limitations under the License.
 
 //! ISMP Testsuite
+
+mod mocks;
+
+use ismp::{host::ISMPHost, router::ISMPRouter};
+
+/*
+    Consensus Client and State Machine checks
+*/
+/// Ensure challenge period rules are followed
+pub fn check_challenge_period(host: &dyn ISMPHost) -> Result<(), &'static str> {
+    Ok(())
+}
+
+/// Ensure expired client rules are followed
+pub fn check_client_expiry(host: &dyn ISMPHost) -> Result<(), &'static str> {
+    Ok(())
+}
+
+/// Frozen client and state machine checks
+pub fn frozen_check(host: &dyn ISMPHost) -> Result<(), &'static str> {
+    Ok(())
+}
+
+/// Ensure all timeout post processing is correctly done.
+pub fn timeout_post_processing_check(
+    host: &dyn ISMPHost,
+    router: &dyn ISMPRouter,
+) -> Result<(), &'static str> {
+    Ok(())
+}
+
+/*
+    Router Implementation checks
+*/
+
+/// Duplicate request and response check
+pub fn check_duplicates(host: &dyn ISMPHost, router: &dyn ISMPRouter) -> Result<(), &'static str> {
+    Ok(())
+}
+
+/// Check that router stores commitments for outgoing requests and responses
+pub fn write_commitments(host: &dyn ISMPHost, router: &dyn ISMPRouter) -> Result<(), &'static str> {
+    Ok(())
+}
