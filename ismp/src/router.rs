@@ -88,7 +88,7 @@ pub enum StorageKind {
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct EvmStorage {
-    pub contractAddress:  [u8; 20],
+    pub contractAddress: [u8; 20],
     pub slot: u64,
     pub evm_storage_type: EvmStorageType,
 }
