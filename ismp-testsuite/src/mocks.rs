@@ -200,7 +200,7 @@ impl ISMPHost for Host {
 
     fn consensus_client(&self, id: ConsensusClientId) -> Result<Box<dyn ConsensusClient>, Error> {
         match id {
-            MOCK_CONSENSUS_CLIENT_ID => Ok(Box::new(MockClient::default())),
+            MOCK_CONSENSUS_CLIENT_ID => Ok(Box::new(MockClient)),
             _ => Err(Error::ImplementationSpecific("Client not found".to_string())),
         }
     }
