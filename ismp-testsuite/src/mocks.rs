@@ -16,12 +16,14 @@ use primitive_types::H256;
 use std::{
     cell::RefCell,
     collections::{BTreeSet, HashMap},
-    sync::Arc,
+    rc::Rc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 #[derive(Default)]
 pub struct MockClient;
+
+pub const MOCK_CONSENSUS_CLIENT_ID: [u8; 4] = [1u8; 4];
 
 #[derive(codec::Encode, codec::Decode)]
 pub struct MockConsensusState {
@@ -73,14 +75,14 @@ impl ConsensusClient for MockClient {
 
 #[derive(Default, Clone)]
 pub struct Host {
-    requests: RefCell<BTreeSet<H256>>,
-    receipts: RefCell<HashMap<H256, ()>>,
-    responses: RefCell<BTreeSet<H256>>,
-    consensus_states: RefCell<HashMap<ConsensusClientId, Vec<u8>>>,
-    state_commitments: RefCell<HashMap<StateMachineHeight, StateCommitment>>,
-    consensus_update_time: RefCell<HashMap<ConsensusClientId, Duration>>,
-    frozen_state_machines: RefCell<HashMap<StateMachineId, StateMachineHeight>>,
-    latest_state_height: RefCell<HashMap<StateMachineId, u64>>,
+    requests: Rc<RefCell<BTreeSet<H256>>>,
+    receipts: Rc<RefCell<HashMap<H256, ()>>>,
+    responses: Rc<RefCell<BTreeSet<H256>>>,
+    consensus_states: Rc<RefCell<HashMap<ConsensusClientId, Vec<u8>>>>,
+    state_commitments: Rc<RefCell<HashMap<StateMachineHeight, StateCommitment>>>,
+    consensus_update_time: Rc<RefCell<HashMap<ConsensusClientId, Duration>>>,
+    frozen_state_machines: Rc<RefCell<HashMap<StateMachineId, StateMachineHeight>>>,
+    latest_state_height: Rc<RefCell<HashMap<StateMachineId, u64>>>,
 }
 
 impl ISMPHost for Host {
@@ -197,7 +199,10 @@ impl ISMPHost for Host {
     }
 
     fn consensus_client(&self, id: ConsensusClientId) -> Result<Box<dyn ConsensusClient>, Error> {
-        Ok(Box::new(MockClient::default()))
+        match id {
+            MOCK_CONSENSUS_CLIENT_ID => Ok(Box::new(MockClient::default())),
+            _ => Err(Error::ImplementationSpecific("Client not found".to_string())),
+        }
     }
 
     fn keccak256(bytes: &[u8]) -> H256
@@ -212,11 +217,11 @@ impl ISMPHost for Host {
     }
 
     fn ismp_router(&self) -> Box<dyn ISMPRouter> {
-        Box::new(MockRouter(Arc::new(self.clone())))
+        Box::new(MockRouter(self.clone()))
     }
 }
 
-pub struct MockRouter(pub Arc<Host>);
+pub struct MockRouter(pub Host);
 
 impl ISMPRouter for MockRouter {
     fn dispatch(&self, request: Request) -> DispatchResult {

@@ -19,39 +19,57 @@ mod mocks;
 #[cfg(test)]
 mod tests;
 
+use crate::mocks::MOCK_CONSENSUS_CLIENT_ID;
 use ismp::{
-    consensus::{
-        ConsensusClientId, IntermediateState, StateCommitment, StateMachineHeight, StateMachineId,
-    },
+    consensus::{IntermediateState, StateCommitment, StateMachineHeight, StateMachineId},
     handlers::handle_incoming_message,
     host::{ISMPHost, StateMachine},
     messaging::{
         ConsensusMessage, Message, Proof, RequestMessage, ResponseMessage, TimeoutMessage,
     },
-    router::{ISMPRouter, Post, Request, Response},
+    router::{Post, Request, Response},
 };
 
+fn setup_mock_client<H: ISMPHost>(host: &H) -> IntermediateState {
+    let intermediate_state = IntermediateState {
+        height: StateMachineHeight {
+            id: StateMachineId {
+                state_id: StateMachine::Ethereum,
+                consensus_client: MOCK_CONSENSUS_CLIENT_ID,
+            },
+            height: 1,
+        },
+        commitment: StateCommitment {
+            timestamp: 1000,
+            ismp_root: None,
+            state_root: Default::default(),
+        },
+    };
+
+    host.store_consensus_state(MOCK_CONSENSUS_CLIENT_ID, vec![]).unwrap();
+    host.store_state_machine_commitment(
+        intermediate_state.height,
+        intermediate_state.commitment.clone(),
+    )
+    .unwrap();
+
+    intermediate_state
+}
 /*
     Consensus Client and State Machine checks
 */
 
 /// Ensure challenge period rules are followed in all handlers
-pub fn check_challenge_period<H: ISMPHost>(
-    host: &H,
-    id: ConsensusClientId,
-    cs_state: Vec<u8>,
-    intermediate_state: IntermediateState,
-    consensus_proof: Vec<u8>,
-) -> Result<(), &'static str> {
-    let consensus_message =
-        Message::Consensus(ConsensusMessage { consensus_proof, consensus_client_id: id });
-    host.store_consensus_state(id, cs_state).unwrap();
-    host.store_state_machine_commitment(intermediate_state.height, intermediate_state.commitment)
-        .unwrap();
+pub fn check_challenge_period<H: ISMPHost>(host: &H) -> Result<(), &'static str> {
+    let consensus_message = Message::Consensus(ConsensusMessage {
+        consensus_proof: vec![],
+        consensus_client_id: MOCK_CONSENSUS_CLIENT_ID,
+    });
+    let intermediate_state = setup_mock_client(host);
     // Set the previous update time
-    let challenge_period = host.challenge_period(id);
+    let challenge_period = host.challenge_period(MOCK_CONSENSUS_CLIENT_ID);
     let previous_update_time = host.timestamp() - (challenge_period / 2);
-    host.store_consensus_update_time(id, previous_update_time).unwrap();
+    host.store_consensus_update_time(MOCK_CONSENSUS_CLIENT_ID, previous_update_time).unwrap();
 
     let res = handle_incoming_message::<H>(host, consensus_message);
     assert!(matches!(res, Err(ismp::error::Error::ChallengePeriodNotElapsed { .. })));
@@ -97,20 +115,17 @@ pub fn check_challenge_period<H: ISMPHost>(
 }
 
 /// Ensure expired client rules are followed in consensus update
-pub fn check_client_expiry<H: ISMPHost>(
-    host: &H,
-    id: ConsensusClientId,
-    cs_state: Vec<u8>,
-    consensus_proof: Vec<u8>,
-) -> Result<(), &'static str> {
-    let consensus_message =
-        Message::Consensus(ConsensusMessage { consensus_proof, consensus_client_id: id });
-    host.store_consensus_state(id, cs_state).unwrap();
+pub fn check_client_expiry<H: ISMPHost>(host: &H) -> Result<(), &'static str> {
+    let consensus_message = Message::Consensus(ConsensusMessage {
+        consensus_proof: vec![],
+        consensus_client_id: MOCK_CONSENSUS_CLIENT_ID,
+    });
+    setup_mock_client(host);
     // Set the previous update time
-    let client = host.consensus_client(id).unwrap();
+    let client = host.consensus_client(MOCK_CONSENSUS_CLIENT_ID).unwrap();
     let unbonding_period = client.unbonding_period();
     let previous_update_time = host.timestamp() - unbonding_period;
-    host.store_consensus_update_time(id, previous_update_time).unwrap();
+    host.store_consensus_update_time(MOCK_CONSENSUS_CLIENT_ID, previous_update_time).unwrap();
 
     let res = handle_incoming_message::<H>(host, consensus_message);
     assert!(matches!(res, Err(ismp::error::Error::UnbondingPeriodElapsed { .. })));
@@ -119,19 +134,12 @@ pub fn check_client_expiry<H: ISMPHost>(
 }
 
 /// Frozen state machine checks in message handlers
-pub fn frozen_check<H: ISMPHost>(
-    host: &H,
-    id: ConsensusClientId,
-    cs_state: Vec<u8>,
-    intermediate_state: IntermediateState,
-) -> Result<(), &'static str> {
-    host.store_consensus_state(id, cs_state).unwrap();
-    host.store_state_machine_commitment(intermediate_state.height, intermediate_state.commitment)
-        .unwrap();
+pub fn frozen_check<H: ISMPHost>(host: &H) -> Result<(), &'static str> {
+    let intermediate_state = setup_mock_client(host);
     // Set the previous update time
-    let challenge_period = host.challenge_period(id);
+    let challenge_period = host.challenge_period(MOCK_CONSENSUS_CLIENT_ID);
     let previous_update_time = host.timestamp() - (challenge_period * 2);
-    host.store_consensus_update_time(id, previous_update_time).unwrap();
+    host.store_consensus_update_time(MOCK_CONSENSUS_CLIENT_ID, previous_update_time).unwrap();
 
     let frozen_height = StateMachineHeight {
         id: intermediate_state.height.id,
@@ -181,10 +189,36 @@ pub fn frozen_check<H: ISMPHost>(
 }
 
 /// Ensure all timeout post processing is correctly done.
-pub fn timeout_post_processing_check(
-    host: &dyn ISMPHost,
-    router: &dyn ISMPRouter,
-) -> Result<(), &'static str> {
+pub fn timeout_post_processing_check<H: ISMPHost>(host: &H) -> Result<(), &'static str> {
+    let intermediate_state = setup_mock_client(host);
+    let challenge_period = host.challenge_period(MOCK_CONSENSUS_CLIENT_ID);
+    let previous_update_time = host.timestamp() - (challenge_period * 2);
+    host.store_consensus_update_time(MOCK_CONSENSUS_CLIENT_ID, previous_update_time).unwrap();
+
+    let post = Post {
+        source_chain: host.host_state_machine(),
+        dest_chain: StateMachine::Kusama(2000),
+        nonce: 0,
+        from: vec![0u8; 32],
+        to: vec![0u8; 32],
+        timeout_timestamp: intermediate_state.commitment.timestamp,
+        data: vec![0u8; 64],
+    };
+    let request = Request::Post(post);
+    let router = host.ismp_router();
+    router.dispatch(request.clone()).unwrap();
+
+    // Timeout mesaage handling check
+    let timeout_message = Message::Timeout(TimeoutMessage {
+        requests: vec![request.clone()],
+        timeout_proof: Proof { height: intermediate_state.height, proof: vec![] },
+    });
+
+    handle_incoming_message(host, timeout_message).unwrap();
+
+    // Assert that request commitment was deleted
+    let commitment = host.request_commitment(&request);
+    assert!(matches!(commitment, Err(..)));
     Ok(())
 }
 
@@ -193,10 +227,8 @@ pub fn timeout_post_processing_check(
 */
 
 /// Check that router stores commitments for outgoing requests and responses and rejects duplicates
-pub fn write_outgoing_commitments(
-    host: &dyn ISMPHost,
-    router: &dyn ISMPRouter,
-) -> Result<(), &'static str> {
+pub fn write_outgoing_commitments(host: &dyn ISMPHost) -> Result<(), &'static str> {
+    let router = host.ismp_router();
     let post = Post {
         source_chain: host.host_state_machine(),
         dest_chain: StateMachine::Kusama(2000),
