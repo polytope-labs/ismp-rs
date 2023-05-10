@@ -56,7 +56,7 @@ jobs:
           cache-on-failure: true
 
       - name: Check format
-        run: cargo +nightly fmt --all --check --workspace
+        run: cargo +nightly fmt --all --check
 
       - name: Check clippy
         run: cargo +nightly clippy --all-targets  --workspace --all-features --verbose -- -D warnings

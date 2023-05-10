@@ -23,6 +23,7 @@ use crate::{
     router::RequestResponse,
     util::hash_request,
 };
+use alloc::vec::Vec;
 
 /// This function handles timeouts for Requests
 pub fn handle<H>(host: &H, msg: TimeoutMessage) -> Result<MessageResult, Error>

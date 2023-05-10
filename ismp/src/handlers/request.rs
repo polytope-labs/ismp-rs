@@ -22,6 +22,7 @@ use crate::{
     messaging::RequestMessage,
     router::RequestResponse,
 };
+use alloc::vec::Vec;
 
 /// Validate the state machine, verify the request message and dispatch the message to the router
 pub fn handle<H>(host: &H, msg: RequestMessage) -> Result<MessageResult, Error>
