@@ -20,27 +20,34 @@ mod mocks;
 mod tests;
 
 use ismp::{
-    consensus::ConsensusClientId,
+    consensus::{
+        ConsensusClientId, IntermediateState, StateCommitment, StateMachineHeight, StateMachineId,
+    },
     handlers::handle_incoming_message,
     host::{ISMPHost, StateMachine},
-    messaging::{ConsensusMessage, Message},
+    messaging::{
+        ConsensusMessage, Message, Proof, RequestMessage, ResponseMessage, TimeoutMessage,
+    },
     router::{ISMPRouter, Post, Request, Response},
 };
 
 /*
     Consensus Client and State Machine checks
 */
-/// Ensure challenge period rules are followed
+
+/// Ensure challenge period rules are followed in all handlers
 pub fn check_challenge_period<H: ISMPHost>(
     host: &H,
     id: ConsensusClientId,
     cs_state: Vec<u8>,
+    intermediate_state: IntermediateState,
     consensus_proof: Vec<u8>,
 ) -> Result<(), &'static str> {
     let consensus_message =
         Message::Consensus(ConsensusMessage { consensus_proof, consensus_client_id: id });
     host.store_consensus_state(id, cs_state).unwrap();
-
+    host.store_state_machine_commitment(intermediate_state.height, intermediate_state.commitment)
+        .unwrap();
     // Set the previous update time
     let challenge_period = host.challenge_period(id);
     let previous_update_time = host.timestamp() - (challenge_period / 2);
@@ -48,10 +55,48 @@ pub fn check_challenge_period<H: ISMPHost>(
 
     let res = handle_incoming_message::<H>(host, consensus_message);
     assert!(matches!(res, Err(ismp::error::Error::ChallengePeriodNotElapsed { .. })));
+
+    let post = Post {
+        source_chain: host.host_state_machine(),
+        dest_chain: StateMachine::Kusama(2000),
+        nonce: 0,
+        from: vec![0u8; 32],
+        to: vec![0u8; 32],
+        timeout_timestamp: 0,
+        data: vec![0u8; 64],
+    };
+    let request = Request::Post(post);
+    // Request message handling check
+    let request_message = Message::Request(RequestMessage {
+        requests: vec![request.clone()],
+        proof: Proof { height: intermediate_state.height, proof: vec![] },
+    });
+
+    let res = handle_incoming_message(host, request_message);
+
+    assert!(matches!(res, Err(ismp::error::Error::ChallengePeriodNotElapsed { .. })));
+
+    // Response message handling check
+    let response_message = Message::Response(ResponseMessage {
+        responses: vec![Response { request: request.clone(), response: vec![] }],
+        proof: Proof { height: intermediate_state.height, proof: vec![] },
+    });
+
+    let res = handle_incoming_message(host, response_message);
+    assert!(matches!(res, Err(ismp::error::Error::ChallengePeriodNotElapsed { .. })));
+
+    // Timeout mesaage handling check
+    let timeout_message = Message::Timeout(TimeoutMessage {
+        requests: vec![request],
+        timeout_proof: Proof { height: intermediate_state.height, proof: vec![] },
+    });
+
+    let res = handle_incoming_message(host, timeout_message);
+    assert!(matches!(res, Err(ismp::error::Error::ChallengePeriodNotElapsed { .. })));
     Ok(())
 }
 
-/// Ensure expired client rules are followed
+/// Ensure expired client rules are followed in consensus update
 pub fn check_client_expiry<H: ISMPHost>(
     host: &H,
     id: ConsensusClientId,
@@ -68,13 +113,70 @@ pub fn check_client_expiry<H: ISMPHost>(
     host.store_consensus_update_time(id, previous_update_time).unwrap();
 
     let res = handle_incoming_message::<H>(host, consensus_message);
-
     assert!(matches!(res, Err(ismp::error::Error::UnbondingPeriodElapsed { .. })));
+
     Ok(())
 }
 
-/// Frozen client and state machine checks
-pub fn frozen_check(host: &dyn ISMPHost) -> Result<(), &'static str> {
+/// Frozen state machine checks in message handlers
+pub fn frozen_check<H: ISMPHost>(
+    host: &H,
+    id: ConsensusClientId,
+    cs_state: Vec<u8>,
+    intermediate_state: IntermediateState,
+) -> Result<(), &'static str> {
+    host.store_consensus_state(id, cs_state).unwrap();
+    host.store_state_machine_commitment(intermediate_state.height, intermediate_state.commitment)
+        .unwrap();
+    // Set the previous update time
+    let challenge_period = host.challenge_period(id);
+    let previous_update_time = host.timestamp() - (challenge_period * 2);
+    host.store_consensus_update_time(id, previous_update_time).unwrap();
+
+    let frozen_height = StateMachineHeight {
+        id: intermediate_state.height.id,
+        height: intermediate_state.height.height + 1,
+    };
+    host.freeze_state_machine(frozen_height).unwrap();
+
+    let post = Post {
+        source_chain: host.host_state_machine(),
+        dest_chain: StateMachine::Kusama(2000),
+        nonce: 0,
+        from: vec![0u8; 32],
+        to: vec![0u8; 32],
+        timeout_timestamp: 0,
+        data: vec![0u8; 64],
+    };
+    let request = Request::Post(post);
+    // Request message handling check
+    let request_message = Message::Request(RequestMessage {
+        requests: vec![request.clone()],
+        proof: Proof { height: intermediate_state.height, proof: vec![] },
+    });
+
+    let res = handle_incoming_message(host, request_message);
+
+    assert!(matches!(res, Err(ismp::error::Error::FrozenStateMachine { .. })));
+
+    // Response message handling check
+    let response_message = Message::Response(ResponseMessage {
+        responses: vec![Response { request: request.clone(), response: vec![] }],
+        proof: Proof { height: intermediate_state.height, proof: vec![] },
+    });
+
+    let res = handle_incoming_message(host, response_message);
+    assert!(matches!(res, Err(ismp::error::Error::FrozenStateMachine { .. })));
+
+    // Timeout mesaage handling check
+    let timeout_message = Message::Timeout(TimeoutMessage {
+        requests: vec![request],
+        timeout_proof: Proof { height: intermediate_state.height, proof: vec![] },
+    });
+
+    let res = handle_incoming_message(host, timeout_message);
+    assert!(matches!(res, Err(ismp::error::Error::FrozenStateMachine { .. })));
+
     Ok(())
 }
 
