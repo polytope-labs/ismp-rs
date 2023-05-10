@@ -88,7 +88,7 @@ pub enum StorageKind {
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct EvmStorage {
-    pub contractAddress: [u8; 20],
+    pub contract_address: [u8; 20],
     pub slot: u64,
     pub evm_storage_type: EvmStorageType,
 }
@@ -112,17 +112,17 @@ pub enum EvmPrimitiveType {
     /// An EVM Address
     Address,
     /// An EVM uint8
-    uint8,
+    Uint8,
     /// An EVM uint32
-    uint32,
+    Uint32,
     /// An EVM uint64
-    uint64,
+    Uint64,
     /// An EVM uint128
-    uint128,
+    Uint128,
     /// An EVM uint256
-    uint256,
+    Uint256,
     /// An EVM boolean type
-    boolean,
+    Boolean,
 }
 
 /// The Storage Type for EVM Get Request.
