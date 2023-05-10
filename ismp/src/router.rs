@@ -81,13 +81,14 @@ pub enum StorageKind {
     /// This indicates that we are trying to get an Evm storage
     EVM(EvmStorage),
     /// This indicates that we are trying to get a Substrate storage
-    Substrate,
+    Substrate(SubstrateType),
 }
 
 /// The Storage Type for EVM Get Request.
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct EvmStorage {
+    pub contractAddress:  [u8; 20],
     pub slot: u64,
     pub evm_storage_type: EvmStorageType,
 }
@@ -96,16 +97,43 @@ pub struct EvmStorage {
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub enum EvmStorageType {
-    /// An EVM Address
-    Address,
     /// An EVM Primitive value
-    Primitive,
+    EvmPrimitive(EvmPrimitiveType),
     /// An EVM Array
     Array,
     /// An EVM Map
     Map,
 }
 
+/// The Storage Type for EVM Get Request.
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
+pub enum EvmPrimitiveType {
+    /// An EVM Address
+    Address,
+    /// An EVM uint8
+    uint8,
+    /// An EVM uint32
+    uint32,
+    /// An EVM uint64
+    uint64,
+    /// An EVM uint128
+    uint128,
+    /// An EVM uint256
+    uint256,
+    /// An EVM boolean type
+    boolean,
+}
+
+/// The Storage Type for EVM Get Request.
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
+pub enum SubstrateType {
+    /// A Pallet
+    Pallet,
+    /// An Ink! smart contract
+    Contract,
+}
 impl Request {
     /// Get the source chain
     pub fn source_chain(&self) -> StateMachine {
