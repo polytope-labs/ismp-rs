@@ -6,13 +6,17 @@ use ismp::{
     error::Error,
     host::{ISMPHost, StateMachine},
     messaging::Proof,
-    router::{DispatchResult, DispatchSuccess, ISMPRouter, Request, RequestResponse, Response},
+    router::{
+        DispatchError, DispatchResult, DispatchSuccess, ISMPRouter, Request, RequestResponse,
+        Response,
+    },
     util::{hash_request, hash_response},
 };
 use primitive_types::H256;
 use std::{
     cell::RefCell,
     collections::{BTreeSet, HashMap},
+    sync::Arc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
@@ -35,7 +39,7 @@ impl ConsensusClient for MockClient {
     }
 
     fn unbonding_period(&self) -> Duration {
-        Duration::from_secs(60 * 60)
+        Duration::from_secs(60 * 60 * 60)
     }
 
     fn verify_membership(
@@ -67,9 +71,10 @@ impl ConsensusClient for MockClient {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Host {
     requests: RefCell<BTreeSet<H256>>,
+    receipts: RefCell<HashMap<H256, ()>>,
     responses: RefCell<BTreeSet<H256>>,
     consensus_states: RefCell<HashMap<ConsensusClientId, Vec<u8>>>,
     state_commitments: RefCell<HashMap<StateMachineHeight, StateCommitment>>,
@@ -141,6 +146,11 @@ impl ISMPHost for Host {
             .ok_or_else(|| Error::ImplementationSpecific("Request commitment not found".into()))
     }
 
+    fn get_request_receipt(&self, req: &Request) -> Option<()> {
+        let hash = hash_request::<Self>(req);
+        self.receipts.borrow().get(&hash).map(|_| ())
+    }
+
     fn store_consensus_state(&self, id: ConsensusClientId, state: Vec<u8>) -> Result<(), Error> {
         self.consensus_states.borrow_mut().insert(id, state);
         Ok(())
@@ -180,6 +190,12 @@ impl ISMPHost for Host {
         Ok(())
     }
 
+    fn store_request_receipt(&self, req: &Request) -> Result<(), Error> {
+        let hash = hash_request::<Self>(req);
+        self.receipts.borrow_mut().insert(hash, ());
+        Ok(())
+    }
+
     fn consensus_client(&self, id: ConsensusClientId) -> Result<Box<dyn ConsensusClient>, Error> {
         Ok(Box::new(MockClient::default()))
     }
@@ -196,19 +212,28 @@ impl ISMPHost for Host {
     }
 
     fn ismp_router(&self) -> Box<dyn ISMPRouter> {
-        todo!()
+        Box::new(MockRouter(Arc::new(self.clone())))
     }
 }
 
-#[derive(Default)]
-pub struct MockRouter;
+pub struct MockRouter(pub Arc<Host>);
 
 impl ISMPRouter for MockRouter {
     fn dispatch(&self, request: Request) -> DispatchResult {
-        let host = Host::default();
+        let host = &self.0.clone();
         if request.dest_chain() != host.host_state_machine() {
             let hash = hash_request::<Host>(&request);
+            if host.requests.borrow().contains(&hash) {
+                return Err(DispatchError {
+                    msg: "Duplicate request".to_string(),
+                    nonce: request.nonce(),
+                    source: request.source_chain(),
+                    dest: request.dest_chain(),
+                })
+            }
             host.requests.borrow_mut().insert(hash);
+        } else {
+            host.store_request_receipt(&request).unwrap();
         }
 
         Ok(DispatchSuccess {
@@ -227,9 +252,17 @@ impl ISMPRouter for MockRouter {
     }
 
     fn write_response(&self, response: Response) -> DispatchResult {
-        let host = Host::default();
+        let host = self.0.clone();
         if response.request.source_chain() != host.host_state_machine() {
             let hash = hash_response::<Host>(&response);
+            if host.responses.borrow().contains(&hash) {
+                return Err(DispatchError {
+                    msg: "Duplicate request".to_string(),
+                    nonce: response.request.nonce(),
+                    source: response.request.source_chain(),
+                    dest: response.request.dest_chain(),
+                })
+            }
             host.responses.borrow_mut().insert(hash);
         }
 

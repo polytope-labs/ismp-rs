@@ -54,8 +54,16 @@ where
 
     let router = host.ismp_router();
 
-    let result =
-        msg.responses.into_iter().map(|response| router.write_response(response)).collect();
+    let result = msg
+        .responses
+        .into_iter()
+        .map(|response| {
+            let request = response.request.clone();
+            let res = router.write_response(response);
+            host.delete_request_commitment(&request)?;
+            Ok(res)
+        })
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(MessageResult::Response(result))
 }

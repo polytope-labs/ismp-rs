@@ -31,6 +31,7 @@ where
     let consensus_client = validate_state_machine(host, &msg.proof)?;
     // Verify membership proof
     let state = host.state_machine_commitment(msg.proof.height)?;
+
     consensus_client.verify_membership(
         host,
         RequestResponse::Request(msg.requests.clone()),
@@ -39,8 +40,17 @@ where
     )?;
 
     let router = host.ismp_router();
-
-    let result = msg.requests.into_iter().map(|request| router.dispatch(request)).collect();
+    // If a receipt exists for any request then it's a duplicate and it is not dispatched
+    let result = msg
+        .requests
+        .into_iter()
+        .filter(|req| host.get_request_receipt(&req).is_none())
+        .map(|request| {
+            let res = router.dispatch(request.clone());
+            host.store_request_receipt(&request)?;
+            Ok(res)
+        })
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(MessageResult::Request(result))
 }
