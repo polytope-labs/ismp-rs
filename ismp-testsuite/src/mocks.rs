@@ -105,7 +105,7 @@ impl ISMPHost for Host {
         self.state_commitments
             .borrow()
             .get(&height)
-            .map(|val| val.clone())
+            .cloned()
             .ok_or_else(|| Error::ImplementationSpecific("state commitment not found".into()))
     }
 
@@ -113,7 +113,7 @@ impl ISMPHost for Host {
         self.consensus_update_time
             .borrow()
             .get(&id)
-            .map(|timestamp| *timestamp)
+            .copied()
             .ok_or_else(|| Error::ImplementationSpecific("Consensus update time not found".into()))
     }
 
@@ -121,7 +121,7 @@ impl ISMPHost for Host {
         self.consensus_states
             .borrow()
             .get(&id)
-            .map(|val| val.clone())
+            .cloned()
             .ok_or_else(|| Error::ImplementationSpecific("consensus state not found".into()))
     }
 
@@ -144,7 +144,7 @@ impl ISMPHost for Host {
         self.requests
             .borrow()
             .contains(&hash)
-            .then(|| hash)
+            .then_some(hash)
             .ok_or_else(|| Error::ImplementationSpecific("Request commitment not found".into()))
     }
 

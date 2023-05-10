@@ -245,7 +245,7 @@ pub fn write_outgoing_commitments(host: &dyn ISMPHost) -> Result<(), &'static st
     host.request_commitment(&request)
         .map_err(|_| "Expected Request commitment to be found in storage")?;
     // Dispatch the same request a second time
-    let err = router.dispatch(request.clone());
+    let err = router.dispatch(request);
     assert!(err.is_err(), "Expected router to return error for duplicate request");
     let post = Post {
         source_chain: StateMachine::Kusama(2000),
