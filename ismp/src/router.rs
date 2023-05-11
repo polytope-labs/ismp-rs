@@ -19,6 +19,7 @@ use crate::{consensus::StateMachineHeight, host::StateMachine, prelude::Vec};
 use alloc::string::String;
 use codec::{Decode, Encode};
 use core::time::Duration;
+use primitive_types::H160;
 
 /// The ISMP POST request.
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
@@ -88,7 +89,7 @@ pub enum StorageKind {
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct EvmStorage {
-    pub contract_address: [u8; 20],
+    pub contract_address: H160,
     pub slot: u64,
     pub evm_storage_type: EvmStorageType,
 }
@@ -130,10 +131,24 @@ pub enum EvmPrimitiveType {
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub enum SubstrateType {
     /// A Pallet
-    Pallet,
+    Pallet(PalletStorageType),
     /// An Ink! smart contract
     Contract,
 }
+
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
+pub enum PalletStorageType {
+    /// Storage Value
+    StorageValue,
+    /// Storage Map
+    StorageMap,
+    /// Double Storage Map
+    DoubleStorageMap,
+    /// Storage N Map
+    StorageNMap,
+}
+
 impl Request {
     /// Get the source chain
     pub fn source_chain(&self) -> StateMachine {
