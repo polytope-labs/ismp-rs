@@ -142,11 +142,22 @@ pub enum PalletStorageType {
     /// Storage Value
     StorageValue,
     /// Storage Map
-    StorageMap,
+    StorageMap(PalletHasherType),
     /// Double Storage Map
-    DoubleStorageMap,
+    DoubleStorageMap(PalletHasherType),
     /// Storage N Map
-    StorageNMap,
+    StorageNMap(PalletHasherType),
+}
+
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
+pub enum PalletHasherType {
+    /// Blake 2
+    Blake2_128Concat,
+    /// TwoX
+    TwoX64Concat,
+    /// Identity
+    Identity,
 }
 
 impl Request {
