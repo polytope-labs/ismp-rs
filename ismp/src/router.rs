@@ -19,7 +19,7 @@ use crate::{consensus::StateMachineHeight, host::StateMachine, prelude::Vec};
 use alloc::string::String;
 use codec::{Decode, Encode};
 use core::time::Duration;
-use primitive_types::H160;
+use primitive_types::{H160, H256, U256};
 
 /// The ISMP POST request.
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
@@ -89,8 +89,14 @@ pub enum StorageKind {
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct EvmStorage {
+    /// The contract address which is always 20 bytes
     pub contract_address: H160,
+    /// To access contract storage, each variables are stored in a structure called Slot
+    /// which is basically an increasing numerical index of the contract storage variables.
+    /// We need to know the slot index of a variable before proceeding to query from the State
+    /// trie.
     pub slot: u64,
+    /// Different storage types supported by the EVM
     pub evm_storage_type: EvmStorageType,
 }
 
@@ -133,7 +139,23 @@ pub enum SubstrateType {
     /// A Pallet
     Pallet(PalletStorageType),
     /// An Ink! smart contract
-    Contract,
+    Contract(InkContractStorage),
+}
+
+/// The Storage Type for Ink Get Request.
+/// The storage API operates by storing and loading entries into and from a single storage cells,
+/// where each storage cell is accessed under its own dedicated storage key.
+/// Ink Storage data is always encoded with the SCALE codec.
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
+pub struct InkContractStorage {
+    /// Account ID of the contract, which is a u32 byte
+    pub account_id: H256,
+    /// Storage root key of the contract
+    /// The storage key of the contracts root storage struct defaults to 0x00000000.
+    /// However, contract developers can set the key to an arbitrary 4 bytes value by providing it
+    /// a ManualKey
+    pub storage_key: U256,
 }
 
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
