@@ -15,11 +15,10 @@
 
 //! ISMPRouter definition
 
-use crate::{consensus::StateMachineHeight, host::StateMachine, prelude::Vec};
+use crate::{consensus::StateMachineHeight, get::StorageKind, host::StateMachine, prelude::Vec};
 use alloc::string::String;
 use codec::{Decode, Encode};
 use core::time::Duration;
-use primitive_types::{H160, H256, U256};
 
 /// The ISMP POST request.
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
@@ -31,7 +30,7 @@ pub struct Post {
     pub dest_chain: StateMachine,
     /// The nonce of this request on the source chain
     pub nonce: u64,
-    /// Moudle Id of the sending module
+    /// Module Id of the sending module
     pub from: Vec<u8>,
     /// Module ID of the receiving module
     pub to: Vec<u8>,
@@ -49,14 +48,12 @@ pub struct Get {
     pub source_chain: StateMachine,
     /// The destination state machine of this request.
     pub dest_chain: StateMachine,
-    /// Storage kind
-    pub storage_kind: StorageKind,
     /// The nonce of this request on the source chain
     pub nonce: u64,
     /// Moudle Id of the sending module
     pub from: Vec<u8>,
     /// Storage keys that this request is interested in.
-    pub keys: Vec<Vec<u8>>,
+    pub keys: Vec<StorageKind>,
     /// Height at which to read the state machine.
     pub height: StateMachineHeight,
     /// Timestamp which this request expires in seconds
@@ -73,115 +70,6 @@ pub enum Request {
     /// A get request allows a module on a state machine to read the storage of another module
     /// living in another state machine.
     Get(Get),
-}
-
-/// The Storage Kind for GET request.
-#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
-pub enum StorageKind {
-    /// This indicates that we are trying to get an Evm storage
-    EVM(EvmStorage),
-    /// This indicates that we are trying to get a Substrate storage
-    Substrate(SubstrateType),
-}
-
-/// The Storage Type for EVM Get Request.
-#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
-pub struct EvmStorage {
-    /// The contract address which is always 20 bytes
-    pub contract_address: H160,
-    /// To access contract storage, each variables are stored in a structure called Slot
-    /// which is basically an increasing numerical index of the contract storage variables.
-    /// We need to know the slot index of a variable before proceeding to query from the State
-    /// trie.
-    pub slot: u64,
-    /// Different storage types supported by the EVM
-    pub evm_storage_type: EvmStorageType,
-}
-
-/// The Storage Type for EVM Get Request.
-#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
-pub enum EvmStorageType {
-    /// An EVM Primitive value
-    EvmPrimitive(EvmPrimitiveType),
-    /// An EVM Array
-    Array,
-    /// An EVM Map
-    Map,
-}
-
-/// The Storage Type for EVM Get Request.
-#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
-pub enum EvmPrimitiveType {
-    /// An EVM Address
-    Address,
-    /// An EVM uint8
-    Uint8,
-    /// An EVM uint32
-    Uint32,
-    /// An EVM uint64
-    Uint64,
-    /// An EVM uint128
-    Uint128,
-    /// An EVM uint256
-    Uint256,
-    /// An EVM boolean type
-    Boolean,
-}
-
-/// The Storage Type for EVM Get Request.
-#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
-pub enum SubstrateType {
-    /// A Pallet
-    Pallet(PalletStorageType),
-    /// An Ink! smart contract
-    Contract(InkContractStorage),
-}
-
-/// The Storage Type for Ink Get Request.
-/// The storage API operates by storing and loading entries into and from a single storage cells,
-/// where each storage cell is accessed under its own dedicated storage key.
-/// Ink Storage data is always encoded with the SCALE codec.
-#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
-pub struct InkContractStorage {
-    /// Account ID of the contract, which is a u32 byte
-    pub account_id: H256,
-    /// The contract's instantiation nonce
-    pub instantiation_nonce: u64,
-    /// Storage root key of the contract
-    /// The storage key of the contracts root storage struct defaults to 0x00000000.
-    /// However, contract developers can set the key to an arbitrary 4 bytes value by providing it
-    /// a ManualKey
-    pub storage_key: U256,
-}
-
-#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
-pub enum PalletStorageType {
-    /// Storage Value
-    StorageValue,
-    /// Storage Map
-    StorageMap(PalletHasherType),
-    /// Double Storage Map
-    DoubleStorageMap(PalletHasherType),
-    /// Storage N Map
-    StorageNMap(PalletHasherType),
-}
-
-#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
-pub enum PalletHasherType {
-    /// Blake 2
-    Blake2_128Concat,
-    /// TwoX
-    TwoX64Concat,
-    /// Identity
-    Identity,
 }
 
 impl Request {
@@ -218,7 +106,7 @@ impl Request {
     }
 
     /// Get the GET request keys.
-    pub fn keys(&self) -> Option<Vec<Vec<u8>>> {
+    pub fn keys(&self) -> Option<Vec<StorageKind>> {
         match self {
             Request::Post(_) => None,
             Request::Get(get) => Some(get.keys.clone()),
