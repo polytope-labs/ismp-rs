@@ -124,7 +124,7 @@ pub enum PalletStorageType {
         pallet_name: String,
         /// String name of the storage double map in the pallet
         storage_name: String,
-        // Scale encoded bytes of the actual key
+        // Scale encoded bytes of the keys
         first_key: Vec<u8>,
         second_key: Vec<u8>,
         first_hasher: HashingAlgorithm,
