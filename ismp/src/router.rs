@@ -151,6 +151,8 @@ pub enum SubstrateType {
 pub struct InkContractStorage {
     /// Account ID of the contract, which is a u32 byte
     pub account_id: H256,
+    /// The contract's instantiation nonce
+    pub instantiation_nonce: u64,
     /// Storage root key of the contract
     /// The storage key of the contracts root storage struct defaults to 0x00000000.
     /// However, contract developers can set the key to an arbitrary 4 bytes value by providing it
