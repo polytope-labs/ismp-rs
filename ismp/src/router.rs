@@ -15,7 +15,7 @@
 
 //! ISMPRouter definition
 
-use crate::{consensus::StateMachineHeight, get::StorageKind, host::StateMachine, prelude::Vec};
+use crate::{consensus::StateMachineHeight, get::StorageKey, host::StateMachine, prelude::Vec};
 use alloc::string::String;
 use codec::{Decode, Encode};
 use core::time::Duration;
@@ -53,7 +53,7 @@ pub struct Get {
     /// Moudle Id of the sending module
     pub from: Vec<u8>,
     /// Storage keys that this request is interested in.
-    pub keys: Vec<StorageKind>,
+    pub keys: Vec<StorageKey>,
     /// Height at which to read the state machine.
     pub height: StateMachineHeight,
     /// Timestamp which this request expires in seconds
@@ -106,7 +106,7 @@ impl Request {
     }
 
     /// Get the GET request keys.
-    pub fn keys(&self) -> Option<Vec<StorageKind>> {
+    pub fn keys(&self) -> Option<Vec<StorageKey>> {
         match self {
             Request::Post(_) => None,
             Request::Get(get) => Some(get.keys.clone()),

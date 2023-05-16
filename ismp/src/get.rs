@@ -1,11 +1,35 @@
-use crate::prelude::{String, Vec};
+use crate::{
+    consensus::StateMachineHeight,
+    host::StateMachine,
+    prelude::{String, Vec},
+};
 use codec::{Decode, Encode};
 use primitive_types::{H160, U256};
+
+/// The ISMP GET request.
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
+pub struct Get {
+    /// The source state machine of this request.
+    pub source_chain: StateMachine,
+    /// The destination state machine of this request.
+    pub dest_chain: StateMachine,
+    /// The nonce of this request on the source chain
+    pub nonce: u64,
+    /// Moudle Id of the sending module
+    pub from: Vec<u8>,
+    /// Storage keys that this request is interested in.
+    pub keys: Vec<StorageKey>,
+    /// Height at which to read the state machine.
+    pub height: StateMachineHeight,
+    /// Timestamp which this request expires in seconds
+    pub timeout_timestamp: u64,
+}
 
 /// The Storage Kind for GET request.
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
-pub enum StorageKind {
+pub enum StorageKey {
     /// This indicates that we are trying to get an Evm storage
     EVM(EvmStorage),
     /// This indicates that we are trying to get a Substrate storage
@@ -23,40 +47,40 @@ pub struct EvmStorage {
     /// We need to know the slot index of a variable before proceeding to query from the State
     /// trie.
     pub slot: u64,
-    /// Different storage types supported by the EVM
-    pub evm_storage_type: EvmStorageType,
+    /// Description for the value at the given slot in storage
+    pub layout: ValueDescription,
+    /// Number of bytes occupied by the value in storage
+    /// For reference a uint256 value has a size of 32, a custom `struct S { uint256 c; uint256 d
+    /// }` would have a size of 64
+    /// Provides information for how the full key should be derived
+    pub value_size: u64,
+}
+
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
+pub enum KeyType {
+    /// An index of an array
+    Index(U256),
+    /// Key pointing to a  value in a map,
+    Key(Vec<u8>),
 }
 
 /// The Storage Type for EVM Get Request.
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
-pub enum EvmStorageType {
-    /// An EVM Primitive value
-    EvmPrimitive(EvmPrimitiveType),
-    /// Item index in a solidity array
-    Array(U256),
-    /// A key in a solidity map, this should be big endian byte representation of the key
-    Map(Vec<u8>),
-}
-
-/// The Storage Type for EVM Get Request.
-#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
-pub enum EvmPrimitiveType {
-    /// An EVM Address
-    Address,
-    /// An EVM uint8
-    Uint8,
-    /// An EVM uint32
-    Uint32,
-    /// An EVM uint64
-    Uint64,
-    /// An EVM uint128
-    Uint128,
-    /// An EVM uint256
-    Uint256,
-    /// An EVM boolean type
-    Boolean,
+pub enum ValueDescription {
+    /// Represents a slot that holds values other than a map
+    Value,
+    /// Path to an item in a solidity array or mapping
+    /// If the first value in the path is `KeyType::Index` then the root element is an array else
+    /// it is a mapping The number of values in the vector indicates the levels of nesting
+    /// including the value type at each level of nesting To fetch a value described by
+    /// `x[20][30][40]` where x is defined as `uint24[][][] x;` we would have
+    /// `vec![KeyType::Index(20), KeyType::Index(30), KeyType::Index(40)]`
+    /// To fetch a value described by `x[20][30][40]` where x is defined as `mapping(uint =>
+    ///  mapping(uint => uint64[] ) x;` we would have `vec![KeyType::Key(20),
+    /// KeyType::Key(30), KeyType::Index(40)]`
+    Path(Vec<KeyType>),
 }
 
 /// The Storage Type for EVM Get Request.
@@ -91,9 +115,14 @@ pub struct InkContractStorage {
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub enum InkStorageType {
-    /// Scale encoded key in a mapping
-    Mapping(Vec<u8>),
-    /// Key for any field of the contract struct as specified in the storage metadata
+    /// Key describing a mapping in a contract
+    Mapping {
+        /// Scale encoded base key for mapping
+        base_key: Vec<u8>,
+        /// Scale encoded item key
+        item_key: Vec<u8>,
+    },
+    /// Scale encoded key for any field of the contract struct as specified in the storage metadata
     /// or defined by the ManualKey
     Other(Vec<u8>),
 }
