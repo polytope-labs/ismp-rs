@@ -47,11 +47,8 @@ fn setup_mock_client<H: ISMPHost>(host: &H) -> IntermediateState {
     };
 
     host.store_consensus_state(MOCK_CONSENSUS_CLIENT_ID, vec![]).unwrap();
-    host.store_state_machine_commitment(
-        intermediate_state.height,
-        intermediate_state.commitment,
-    )
-    .unwrap();
+    host.store_state_machine_commitment(intermediate_state.height, intermediate_state.commitment)
+        .unwrap();
 
     intermediate_state
 }

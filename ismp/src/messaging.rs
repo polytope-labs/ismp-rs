@@ -58,9 +58,9 @@ pub enum ResponseMessage {
         proof: Proof,
     },
     Get {
-        /// Responses from sink chain
+        /// Request batch
         requests: Vec<Request>,
-        /// State proofs
+        /// State proof
         proof: Proof,
     },
 }
@@ -108,7 +108,7 @@ pub enum TimeoutMessage {
     /// There are no proofs for Get timeouts, we only need to
     /// ensure that the timeout timestamp has elapsed on the host
     Get {
-        /// Request timeouts
+        /// Requests that have timed out
         requests: Vec<Request>,
     },
 }

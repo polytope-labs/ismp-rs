@@ -47,7 +47,7 @@ pub struct EvmStorage {
     /// We need to know the slot index of a variable before proceeding to query from the State
     /// trie.
     pub slot: u64,
-    /// Description for the value at the given slot in storage
+    /// Path Layout to the value at the given slot in storage
     pub layout: ValueDescription,
     /// Number of bytes occupied by the value in storage
     /// For reference a uint256 value has a size of 32, a `struct S { uint256 c; uint256 d }`
@@ -70,17 +70,19 @@ pub enum KeyType {
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub enum ValueDescription {
-    /// Represents a slot that holds values other than a map
+    /// Represents a slot that holds a type other than a map or array
     Value,
     /// Path to an item in a solidity array or mapping
     /// If the first value in the path is `KeyType::Index` then the root element is an array else
-    /// it is a mapping The number of values in the vector indicates the levels of nesting
-    /// including the value type at each level of nesting To fetch a value described by
-    /// `x[20][30][40]` where x is defined as `uint24[][][] x;` we would have
-    /// `vec![KeyType::Index(20), KeyType::Index(30), KeyType::Index(40)]`
-    /// To fetch a value described by `x[20][30][40]` where x is defined as `mapping(uint =>
-    ///  mapping(uint => uint64[] ) x;` we would have `vec![KeyType::Key(20),
-    /// KeyType::Key(30), KeyType::Index(40)]`
+    /// it is a mapping.
+    /// The number of values in the vector indicates the levels of nesting
+    /// and the value type at each level of nesting.
+    /// To fetch a value described by
+    /// `x[20][30][40]`, where x is defined as `uint24[][][] x;`, we would have
+    /// `vec![KeyType::Index(20), KeyType::Index(30), KeyType::Index(40)]`.
+    /// To fetch a value described by `x[20][30][40]`, where x is defined as `mapping(uint =>
+    ///  mapping(uint => uint64[] ) x;`, we would have `vec![KeyType::Key(20),
+    /// KeyType::Key(30), KeyType::Index(40)]`.
     Path(Vec<KeyType>),
 }
 
@@ -94,9 +96,9 @@ pub enum SubstrateType {
     Contract(InkContractStorage),
 }
 
-/// The Storage Type for Ink Get Request.
-/// The storage API operates by storing and loading entries  from single storage cells,
-/// where each storage cell is accessed under its own dedicated storage key.
+/// The Storage Key Description for an Ink contract field.
+/// The storage API operates by storing and loading entries from single storage cells,
+/// Each storage cell is accessed under its own dedicated storage key.
 /// Ink Storage keys and are always encoded with the SCALE codec.
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]

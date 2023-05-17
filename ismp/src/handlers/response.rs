@@ -69,7 +69,8 @@ where
                 .collect::<Result<Vec<_>, _>>()?
         }
         ResponseMessage::Get { requests, proof } => {
-            // Ensure the proof height is greater than the height specified in the Get requests
+            // Ensure the proof height is greater than each retrieval height specified in the Get
+            // requests
             sufficient_proof_height(&requests, &proof)?;
             // Since each get request can  contain multiple storage keys, we should handle them
             // individually

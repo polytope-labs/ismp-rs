@@ -76,7 +76,6 @@ where
         }
         TimeoutMessage::Get { requests } => {
             for request in &requests {
-                // Ensure the get timeout has elapsed on the host
                 let commitment = host.request_commitment(request)?;
                 if commitment != hash_request::<H>(request) {
                     return Err(Error::RequestCommitmentNotFound {
@@ -86,6 +85,7 @@ where
                     })
                 }
 
+                // Ensure the get timeout has elapsed on the host
                 if !request.timed_out(host.timestamp()) {
                     Err(Error::RequestTimeoutNotElapsed {
                         nonce: request.nonce(),
