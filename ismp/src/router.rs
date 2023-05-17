@@ -15,12 +15,7 @@
 
 //! ISMPRouter definition
 
-use crate::{
-    error::Error,
-    get::{Get, StorageKey},
-    host::StateMachine,
-    prelude::Vec,
-};
+use crate::{consensus::StateMachineHeight, error::Error, host::StateMachine, prelude::Vec};
 use alloc::string::{String, ToString};
 use codec::{Decode, Encode};
 use core::time::Duration;
@@ -43,6 +38,34 @@ pub struct Post {
     pub timeout_timestamp: u64,
     /// Encoded Request.
     pub data: Vec<u8>,
+}
+
+/// The ISMP GET request.
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
+pub struct Get {
+    /// The source state machine of this request.
+    pub source_chain: StateMachine,
+    /// The destination state machine of this request.
+    pub dest_chain: StateMachine,
+    /// The nonce of this request on the source chain
+    pub nonce: u64,
+    /// Module Id of the sending module
+    pub from: Vec<u8>,
+    /// Raw Storage keys that would be used to fetch the values from the counterparty
+    /// For deriving storage keys for ink contract fields follow the guide in the link below
+    /// https://use.ink/datastructures/storage-in-metadata#a-full-example
+    /// The algorithms for calculating raw storage keys for different substrate pallet storage
+    /// types are described in the following links
+    /// https://github.com/paritytech/substrate/blob/master/frame/support/src/storage/types/map.rs#L34-L42
+    /// https://github.com/paritytech/substrate/blob/master/frame/support/src/storage/types/double_map.rs#L34-L44
+    /// https://github.com/paritytech/substrate/blob/master/frame/support/src/storage/types/nmap.rs#L39-L48
+    /// https://github.com/paritytech/substrate/blob/master/frame/support/src/storage/types/value.rs#L37
+    pub keys: Vec<Vec<u8>>,
+    /// Height at which to read the state machine.
+    pub height: StateMachineHeight,
+    /// Host timestamp at which this request expires in seconds
+    pub timeout_timestamp: u64,
 }
 
 /// The ISMP request.
@@ -91,7 +114,7 @@ impl Request {
     }
 
     /// Get the GET request keys.
-    pub fn keys(&self) -> Option<Vec<StorageKey>> {
+    pub fn keys(&self) -> Option<Vec<Vec<u8>>> {
         match self {
             Request::Post(_) => None,
             Request::Get(get) => Some(get.keys.clone()),

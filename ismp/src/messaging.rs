@@ -15,6 +15,9 @@
 
 //! ISMP message types
 
+// Messages are processed in batches, all messages in a batch should
+// originate from the same chain
+
 use crate::{
     consensus::{ConsensusClientId, IntermediateState, StateMachineHeight},
     error::Error,

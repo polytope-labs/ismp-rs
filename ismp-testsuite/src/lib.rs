@@ -15,7 +15,7 @@
 
 //! ISMP Testsuite
 
-mod mocks;
+pub mod mocks;
 #[cfg(test)]
 mod tests;
 
