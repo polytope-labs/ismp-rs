@@ -15,8 +15,10 @@
 
 //! ISMPRouter definition
 
-use crate::{consensus::StateMachineHeight, get::StorageKey, host::StateMachine, prelude::Vec};
-use alloc::string::String;
+use crate::{
+    consensus::StateMachineHeight, error::Error, get::StorageKey, host::StateMachine, prelude::Vec,
+};
+use alloc::string::{String, ToString};
 use codec::{Decode, Encode};
 use core::time::Duration;
 
@@ -125,16 +127,49 @@ impl Request {
     pub fn timed_out(&self, proof_timestamp: Duration) -> bool {
         proof_timestamp >= self.timeout()
     }
+
+    pub fn get_request(&self) -> Result<Get, Error> {
+        match self {
+            Request::Post(_) => {
+                Err(Error::ImplementationSpecific("Expected Get request".to_string()))
+            }
+            Request::Get(get) => Ok(get.clone()),
+        }
+    }
+
+    pub fn is_type_get(&self) -> bool {
+        match self {
+            Request::Post(_) => false,
+            Request::Get(_) => true,
+        }
+    }
 }
 
 /// The ISMP response
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
-pub struct Response {
-    /// The request that triggered this response.
-    pub request: Request,
-    /// The response message.
-    pub response: Vec<u8>,
+pub enum Response {
+    Post {
+        /// The request that triggered this response.
+        post: Post,
+        /// The response message.
+        response: Vec<u8>,
+    },
+    Get {
+        /// The Get request that triggered this response.
+        get: Get,
+        /// Values derived from the state proof
+        values: Vec<Option<Vec<u8>>>,
+    },
+}
+
+impl Response {
+    pub fn request(&self) -> Request {
+        match self {
+            Response::Post { post, .. } => Request::Post(post.clone()),
+            Response::Get { get, .. } => Request::Get(get.clone()),
+        }
+    }
 }
 
 /// This is the concrete type for Get requests

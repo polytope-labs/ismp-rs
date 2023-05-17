@@ -32,9 +32,10 @@ pub fn hash_request<H: ISMPHost>(req: &Request) -> H256 {
 
 /// Return the keccak256 of a response
 pub fn hash_response<H: ISMPHost>(res: &Response) -> H256 {
-    let req = match res.request {
-        Request::Post(ref post) => post,
-        _ => unimplemented!(),
+    let (req, response) = match res {
+        Response::Post { ref post, response } => (post, response),
+        // Get responses are not hashed
+        _ => return Default::default(),
     };
     let mut buf = Vec::new();
     let source_chain = req.source_chain.to_string();
@@ -48,6 +49,6 @@ pub fn hash_response<H: ISMPHost>(res: &Response) -> H256 {
     buf.extend_from_slice(&req.data);
     buf.extend_from_slice(&req.from);
     buf.extend_from_slice(&req.to);
-    buf.extend_from_slice(&res.response);
+    buf.extend_from_slice(response);
     H::keccak256(&buf[..])
 }

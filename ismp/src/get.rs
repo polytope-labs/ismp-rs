@@ -16,13 +16,13 @@ pub struct Get {
     pub dest_chain: StateMachine,
     /// The nonce of this request on the source chain
     pub nonce: u64,
-    /// Moudle Id of the sending module
+    /// Module Id of the sending module
     pub from: Vec<u8>,
     /// Storage keys that this request is interested in.
-    pub keys: Vec<StorageKey>,
+    pub key: Vec<StorageKey>,
     /// Height at which to read the state machine.
     pub height: StateMachineHeight,
-    /// Timestamp which this request expires in seconds
+    /// Host timestamp at which this request expires in seconds
     pub timeout_timestamp: u64,
 }
 
@@ -50,9 +50,9 @@ pub struct EvmStorage {
     /// Description for the value at the given slot in storage
     pub layout: ValueDescription,
     /// Number of bytes occupied by the value in storage
-    /// For reference a uint256 value has a size of 32, a custom `struct S { uint256 c; uint256 d
-    /// }` would have a size of 64
-    /// Provides information for how the full key should be derived
+    /// For reference a uint256 value has a size of 32, a `struct S { uint256 c; uint256 d }`
+    /// would have a size of 64
+    /// Provides information for how many offsets the key requires
     pub value_size: u64,
 }
 
@@ -62,6 +62,7 @@ pub enum KeyType {
     /// An index of an array
     Index(U256),
     /// Key pointing to a  value in a map,
+    /// Big endian byte representation of the key
     Key(Vec<u8>),
 }
 
@@ -94,9 +95,9 @@ pub enum SubstrateType {
 }
 
 /// The Storage Type for Ink Get Request.
-/// The storage API operates by storing and loading entries into and from a single storage cells,
+/// The storage API operates by storing and loading entries  from single storage cells,
 /// where each storage cell is accessed under its own dedicated storage key.
-/// Ink Storage data is always encoded with the SCALE codec.
+/// Ink Storage keys and are always encoded with the SCALE codec.
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct InkContractStorage {
@@ -143,8 +144,9 @@ pub enum PalletStorageType {
         pallet_name: String,
         /// String name of the storage map in the pallet
         storage_name: String,
-        // Scale encoded bytes of the actual key
+        /// Scale encoded bytes of the actual key
         key: Vec<u8>,
+        /// Key hashing algorithm
         hasher: HashingAlgorithm,
     },
     /// Double Storage Map
@@ -156,7 +158,9 @@ pub enum PalletStorageType {
         // Scale encoded bytes of the keys
         first_key: Vec<u8>,
         second_key: Vec<u8>,
+        /// First key hashing algorithm
         first_hasher: HashingAlgorithm,
+        /// Second key hashing algorithm
         second_hasher: HashingAlgorithm,
     },
     /// Storage N Map
