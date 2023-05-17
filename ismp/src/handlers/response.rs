@@ -23,7 +23,7 @@ use crate::{
     router::{RequestResponse, Response},
     util::hash_request,
 };
-use alloc::{vec, vec::Vec};
+use alloc::{string::ToString, vec::Vec};
 
 /// Validate the state machine, verify the response message and dispatch the message to the router
 pub fn handle<H>(host: &H, msg: ResponseMessage) -> Result<MessageResult, Error>
@@ -77,8 +77,9 @@ where
             requests
                 .into_iter()
                 .map(|request| {
-                    let keys = consensus_client
-                        .state_trie_key(RequestResponse::Request(vec![request.clone()]));
+                    let keys = request.keys().ok_or_else(|| {
+                        Error::ImplementationSpecific("Missing keys for get request".to_string())
+                    })?;
                     let values =
                         consensus_client.verify_state_proof(host, keys.clone(), state, &proof)?;
 
