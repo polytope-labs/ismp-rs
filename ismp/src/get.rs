@@ -19,7 +19,7 @@ pub struct Get {
     /// Module Id of the sending module
     pub from: Vec<u8>,
     /// Storage keys that this request is interested in.
-    pub key: Vec<StorageKey>,
+    pub keys: Vec<StorageKey>,
     /// Height at which to read the state machine.
     pub height: StateMachineHeight,
     /// Host timestamp at which this request expires in seconds

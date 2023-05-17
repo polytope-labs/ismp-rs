@@ -105,7 +105,7 @@ pub enum TimeoutMessage {
         /// Non membership batch proof for these requests
         timeout_proof: Proof,
     },
-    /// There are no proofs for Get timeout, we only need to
+    /// There are no proofs for Get timeouts, we only need to
     /// ensure that the timeout timestamp has elapsed on the host
     Get {
         /// Request timeouts

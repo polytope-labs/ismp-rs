@@ -16,7 +16,10 @@
 //! ISMPRouter definition
 
 use crate::{
-    consensus::StateMachineHeight, error::Error, get::StorageKey, host::StateMachine, prelude::Vec,
+    error::Error,
+    get::{Get, StorageKey},
+    host::StateMachine,
+    prelude::Vec,
 };
 use alloc::string::{String, ToString};
 use codec::{Decode, Encode};
@@ -40,26 +43,6 @@ pub struct Post {
     pub timeout_timestamp: u64,
     /// Encoded Request.
     pub data: Vec<u8>,
-}
-
-/// The ISMP GET request.
-#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
-pub struct Get {
-    /// The source state machine of this request.
-    pub source_chain: StateMachine,
-    /// The destination state machine of this request.
-    pub dest_chain: StateMachine,
-    /// The nonce of this request on the source chain
-    pub nonce: u64,
-    /// Moudle Id of the sending module
-    pub from: Vec<u8>,
-    /// Storage keys that this request is interested in.
-    pub keys: Vec<StorageKey>,
-    /// Height at which to read the state machine.
-    pub height: StateMachineHeight,
-    /// Timestamp which this request expires in seconds
-    pub timeout_timestamp: u64,
 }
 
 /// The ISMP request.
