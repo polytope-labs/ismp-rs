@@ -30,23 +30,21 @@ pub fn handle<H>(host: &H, msg: TimeoutMessage) -> Result<MessageResult, Error>
 where
     H: ISMPHost,
 {
-    // Ensure a commitment exists for all requests in the batch
-    for request in msg.requests() {
-        let commitment = host.request_commitment(request)?;
-        if commitment != hash_request::<H>(request) {
-            return Err(Error::RequestCommitmentNotFound {
-                nonce: request.nonce(),
-                source: request.source_chain(),
-                dest: request.dest_chain(),
-            })
-        }
-    }
-
     let results = match msg {
         TimeoutMessage::Post { requests, timeout_proof } => {
             let consensus_client = validate_state_machine(host, timeout_proof.height)?;
             let state = host.state_machine_commitment(timeout_proof.height)?;
             for request in &requests {
+                // Ensure a commitment exists for all requests in the batch
+                let commitment = host.request_commitment(request)?;
+                if commitment != hash_request::<H>(request) {
+                    return Err(Error::RequestCommitmentNotFound {
+                        nonce: request.nonce(),
+                        source: request.source_chain(),
+                        dest: request.dest_chain(),
+                    })
+                }
+
                 if !request.timed_out(state.timestamp()) {
                     Err(Error::RequestTimeoutNotElapsed {
                         nonce: request.nonce(),
@@ -77,8 +75,17 @@ where
                 .collect::<Result<Vec<_>, _>>()?
         }
         TimeoutMessage::Get { requests } => {
-            // Ensure the get timeout has elapsed on the host
             for request in &requests {
+                // Ensure the get timeout has elapsed on the host
+                let commitment = host.request_commitment(request)?;
+                if commitment != hash_request::<H>(request) {
+                    return Err(Error::RequestCommitmentNotFound {
+                        nonce: request.nonce(),
+                        source: request.source_chain(),
+                        dest: request.dest_chain(),
+                    })
+                }
+
                 if !request.timed_out(host.timestamp()) {
                     Err(Error::RequestTimeoutNotElapsed {
                         nonce: request.nonce(),

@@ -78,11 +78,14 @@ where
                 .map(|request| {
                     let keys = consensus_client
                         .state_trie_key(RequestResponse::Request(vec![request.clone()]));
-                    let values = consensus_client.verify_state_proof(host, keys, state, &proof)?;
+                    let values =
+                        consensus_client.verify_state_proof(host, keys.clone(), state, &proof)?;
 
                     let router = host.ismp_router();
-                    let res = router
-                        .write_response(Response::Get { get: request.get_request()?, values });
+                    let res = router.write_response(Response::Get {
+                        get: request.get_request()?,
+                        values: keys.into_iter().zip(values.into_iter()).collect(),
+                    });
                     host.delete_request_commitment(&request)?;
                     Ok(res)
                 })

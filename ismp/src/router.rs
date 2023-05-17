@@ -142,7 +142,7 @@ pub enum Response {
         /// The Get request that triggered this response.
         get: Get,
         /// Values derived from the state proof
-        values: Vec<Option<Vec<u8>>>,
+        values: Vec<(Vec<u8>, Option<Vec<u8>>)>,
     },
 }
 
@@ -153,10 +153,31 @@ impl Response {
             Response::Get { get, .. } => Request::Get(get.clone()),
         }
     }
-}
 
-/// This is the concrete type for Get requests
-pub type GetResponse = Vec<(Vec<u8>, Vec<u8>)>;
+    /// Get the source chain for this response
+    pub fn source_chain(&self) -> StateMachine {
+        match self {
+            Response::Get { get, .. } => get.dest_chain,
+            Response::Post { post, .. } => post.dest_chain,
+        }
+    }
+
+    /// Get the destination chain for this response
+    pub fn dest_chain(&self) -> StateMachine {
+        match self {
+            Response::Get { get, .. } => get.source_chain,
+            Response::Post { post, .. } => post.source_chain,
+        }
+    }
+
+    /// Get the request nonce
+    pub fn nonce(&self) -> u64 {
+        match self {
+            Response::Get { get, .. } => get.nonce,
+            Response::Post { post, .. } => post.nonce,
+        }
+    }
+}
 
 /// Convenience enum for membership verification.
 pub enum RequestResponse {
