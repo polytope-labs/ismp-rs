@@ -4,7 +4,7 @@ Implementation of the Interoperable State Machine Protocol in Rust. This project
 
 ## Goals
 
-This repo holds all the neccessary components that state machines need become interoperable using the ISMP protocol.
+This repo holds all the neccessary components that state machines need to become interoperable using the ISMP protocol.
 
 ## Documentation
 
