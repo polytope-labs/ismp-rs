@@ -20,7 +20,6 @@ use crate::{
     handlers::{validate_state_machine, MessageResult},
     host::IsmpHost,
     messaging::TimeoutMessage,
-    router::RequestResponse,
     util::hash_request,
 };
 use alloc::vec::Vec;
