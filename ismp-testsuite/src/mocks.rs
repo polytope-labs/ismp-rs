@@ -108,7 +108,7 @@ impl IsmpHost for Host {
         self.latest_state_height
             .borrow()
             .get(&id)
-            .map(|height| *height)
+            .copied()
             .ok_or_else(|| Error::ImplementationSpecific("latest height not found".into()))
     }
 
