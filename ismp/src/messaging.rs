@@ -36,6 +36,17 @@ pub struct ConsensusMessage {
     pub consensus_client_id: ConsensusClientId,
 }
 
+/// A fraud proof message is used to report byzantine misbehaviour in a consensus system.
+#[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq)]
+pub struct FraudProofMessage {
+    /// The first consensus Proof
+    pub proof_1: Vec<u8>,
+    /// The second consensus Proof
+    pub proof_2: Vec<u8>,
+    /// Consensus client id
+    pub consensus_client_id: ConsensusClientId,
+}
+
 /// Identifies a state commitment at a given height
 #[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq)]
 pub struct StateCommitmentHeight {
@@ -172,13 +183,16 @@ pub enum Message {
     /// A consensus update message
     #[codec(index = 0)]
     Consensus(ConsensusMessage),
-    /// A request message
+    /// A fraud proof message
     #[codec(index = 1)]
+    FraudProof(FraudProofMessage),
+    /// A request message
+    #[codec(index = 2)]
     Request(RequestMessage),
     /// A response message
-    #[codec(index = 2)]
+    #[codec(index = 3)]
     Response(ResponseMessage),
     /// A request timeout message
-    #[codec(index = 3)]
+    #[codec(index = 4)]
     Timeout(TimeoutMessage),
 }

@@ -20,7 +20,7 @@ use crate::{
     error::Error,
     handlers::{ConsensusClientCreatedResult, ConsensusUpdateResult, MessageResult},
     host::IsmpHost,
-    messaging::{ConsensusMessage, CreateConsensusClient},
+    messaging::{ConsensusMessage, CreateConsensusClient, FraudProofMessage},
 };
 use alloc::collections::BTreeSet;
 
@@ -111,4 +111,21 @@ where
     host.store_consensus_update_time(message.consensus_client_id, host.timestamp())?;
 
     Ok(ConsensusClientCreatedResult { consensus_client_id: message.consensus_client_id })
+}
+
+/// Freeze a consensus client by providing a valid fraud proof.
+pub fn freeze_client<H>(host: &H, msg: FraudProofMessage) -> Result<MessageResult, Error>
+where
+    H: IsmpHost,
+{
+    let consensus_client = host.consensus_client(msg.consensus_client_id)?;
+    let trusted_state = host.consensus_state(msg.consensus_client_id)?;
+
+    consensus_client.verify_fraud_proof(host, trusted_state, msg.proof_1, msg.proof_2)?;
+
+    host.freeze_consensus_client(msg.consensus_client_id)?;
+
+    host.store_consensus_update_time(msg.consensus_client_id, host.timestamp())?;
+
+    Ok(MessageResult::FrozenClient(msg.consensus_client_id))
 }

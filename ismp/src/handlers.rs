@@ -50,6 +50,8 @@ pub struct ConsensusClientCreatedResult {
 pub enum MessageResult {
     /// The [`ConsensusMessage`] result
     ConsensusMessage(ConsensusUpdateResult),
+    /// Result of freezing a consensus client.
+    FrozenClient(ConsensusClientId),
     /// The [`DispatchResult`] for requests
     Request(Vec<DispatchResult>),
     /// The [`DispatchResult`] for responses
@@ -65,6 +67,7 @@ where
 {
     match message {
         Message::Consensus(consensus_message) => consensus::update_client(host, consensus_message),
+        Message::FraudProof(fraud_proof) => consensus::freeze_client(host, fraud_proof),
         Message::Request(req) => request::handle(host, req),
         Message::Response(resp) => response::handle(host, resp),
         Message::Timeout(timeout) => timeout::handle(host, timeout),
