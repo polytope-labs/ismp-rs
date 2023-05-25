@@ -119,7 +119,7 @@ impl ResponseMessage {
 /// get requests
 pub fn sufficient_proof_height(requests: &[Request], proof: &Proof) -> Result<(), Error> {
     let check = requests.iter().any(|req| match req {
-        Request::Get(get) => get.height > proof.height,
+        Request::Get(get) => get.height == proof.height.height,
         _ => true,
     });
     if check {

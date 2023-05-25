@@ -33,7 +33,7 @@ pub fn hash_request<H: IsmpHost>(req: &Request) -> H256 {
             let source_chain = get.source_chain.to_string();
             let dest_chain = get.dest_chain.to_string();
             let nonce = get.nonce.to_be_bytes();
-            let height = get.height.encode();
+            let height = get.height.to_be_bytes();
             let timestamp = get.timeout_timestamp.to_be_bytes();
             buf.extend_from_slice(source_chain.as_bytes());
             buf.extend_from_slice(dest_chain.as_bytes());

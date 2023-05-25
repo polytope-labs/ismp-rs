@@ -115,5 +115,5 @@ where
         })
     }
 
-    Ok(consensus_client.state_machine(proof_height.id.state_id)?)
+    consensus_client.state_machine(proof_height.id.state_id)
 }

@@ -63,7 +63,7 @@ pub struct Get {
     /// https://github.com/paritytech/substrate/blob/master/frame/support/src/storage/types/value.rs#L37
     pub keys: Vec<Vec<u8>>,
     /// Height at which to read the state machine.
-    pub height: StateMachineHeight,
+    pub height: u64,
     /// Host timestamp at which this request expires in seconds
     pub timeout_timestamp: u64,
 }
@@ -262,10 +262,46 @@ pub trait IsmpRouter {
     fn handle_response(&self, response: Response) -> DispatchResult;
 }
 
+/// Simplified POST request, intended to be used for sending outgoing requests
+pub struct DispatchPost {
+    /// The destination state machine of this request.
+    pub dest_chain: StateMachine,
+    /// Module Id of the sending module
+    pub from: Vec<u8>,
+    /// Module ID of the receiving module
+    pub to: Vec<u8>,
+    /// Timestamp which this request expires in seconds.
+    pub timeout_timestamp: u64,
+    /// Encoded Request.
+    pub data: Vec<u8>,
+}
+
+/// Simplified GET request, intended to be used for sending outgoing requests
+pub struct DispatchGet {
+    /// The destination state machine of this request.
+    pub dest_chain: StateMachine,
+    /// Module Id of the sending module
+    pub from: Vec<u8>,
+    /// Raw Storage keys that would be used to fetch the values from the counterparty
+    pub keys: Vec<Vec<u8>>,
+    /// Height at which to read the state machine.
+    pub height: u64,
+    /// Host timestamp at which this request expires in seconds
+    pub timeout_timestamp: u64,
+}
+
+/// Simplified request, intended to be used for sending outgoing requests
+pub enum DispatchRequest {
+    /// The POST variant
+    Post(DispatchPost),
+    /// The GET variant
+    Get(DispatchGet),
+}
+
 /// The Ismp dispatcher allows [`IsmpModules`] to send out outgoing [`Request`] or [`Response`]
 pub trait IsmpDispatcher {
     /// Dispatches an outgoing request, the dispatcher should commit them to host state trie
-    fn dispatch_request(&self, request: Request) -> DispatchResult;
+    fn dispatch_request(&self, request: DispatchRequest) -> DispatchResult;
 
     /// Dispatches an outgoing response, the dispatcher should commit them to host state trie
     fn dispatch_response(&self, response: PostResponse) -> DispatchResult;
