@@ -56,7 +56,8 @@ pub trait IsmpHost {
     /// Should return the current timestamp on the host
     fn timestamp(&self) -> Duration;
 
-    /// Checks if a state machine is frozen at the provided height
+    /// Checks if a state machine is frozen at the provided height, should return Ok(()) if it isn't
+    /// or [`Error::FrozenStateMachine`] if it is.
     fn is_state_machine_frozen(&self, machine: StateMachineHeight) -> Result<(), Error>;
 
     /// Checks if a state machine is frozen at the provided height
