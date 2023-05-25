@@ -60,8 +60,10 @@ where
 
             responses
                 .into_iter()
+                .filter(|res| host.response_receipt(res).is_none())
                 .map(|response| {
-                    let res = router.dispatch_response(response);
+                    let res = router.dispatch_response(response.clone());
+                    host.store_response_receipt(&response)?;
                     Ok(res)
                 })
                 .collect::<Result<Vec<_>, _>>()?

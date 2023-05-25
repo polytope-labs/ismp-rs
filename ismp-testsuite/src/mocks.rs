@@ -148,7 +148,7 @@ impl IsmpHost for Host {
             .ok_or_else(|| Error::ImplementationSpecific("Request commitment not found".into()))
     }
 
-    fn get_request_receipt(&self, req: &Request) -> Option<()> {
+    fn request_receipt(&self, req: &Request) -> Option<()> {
         let hash = hash_request::<Self>(req);
         self.receipts.borrow().get(&hash).map(|_| ())
     }

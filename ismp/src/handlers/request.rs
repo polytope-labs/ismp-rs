@@ -45,7 +45,7 @@ where
     let result = msg
         .requests
         .into_iter()
-        .filter(|req| host.get_request_receipt(req).is_none())
+        .filter(|req| host.request_receipt(req).is_none())
         .map(|request| {
             let res = router.dispatch_request(request.clone());
             host.store_request_receipt(&request)?;
