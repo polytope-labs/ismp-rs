@@ -27,7 +27,7 @@ use ismp::{
     messaging::{
         ConsensusMessage, Message, Proof, RequestMessage, ResponseMessage, TimeoutMessage,
     },
-    router::{Post, Request, Response},
+    router::{Post, PostResponse, Request, Response},
 };
 
 fn setup_mock_client<H: IsmpHost>(host: &H) -> IntermediateState {
@@ -93,7 +93,7 @@ pub fn check_challenge_period<H: IsmpHost>(host: &H) -> Result<(), &'static str>
 
     // Response message handling check
     let response_message = Message::Response(ResponseMessage::Post {
-        responses: vec![Response::Post { post, response: vec![] }],
+        responses: vec![Response::Post(PostResponse { post, response: vec![] })],
         proof: Proof { height: intermediate_state.height, proof: vec![] },
     });
 
@@ -166,7 +166,7 @@ pub fn frozen_check<H: IsmpHost>(host: &H) -> Result<(), &'static str> {
 
     // Response message handling check
     let response_message = Message::Response(ResponseMessage::Post {
-        responses: vec![Response::Post { post, response: vec![] }],
+        responses: vec![Response::Post(PostResponse { post, response: vec![] })],
         proof: Proof { height: intermediate_state.height, proof: vec![] },
     });
 
@@ -253,7 +253,7 @@ pub fn write_outgoing_commitments(host: &dyn IsmpHost) -> Result<(), &'static st
         timeout_timestamp: 0,
         data: vec![0u8; 64],
     };
-    let response = Response::Post { post, response: vec![0u8; 64] };
+    let response = Response::Post(PostResponse { post, response: vec![] });
     // Dispatch the outgoing response for the first time
     router.handle_response(response.clone()).map_err(|_| "Router failed to dispatch request")?;
     // Dispatch the same response a second time

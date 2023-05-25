@@ -15,7 +15,7 @@
 
 //! IsmpRouter definition
 
-use crate::{consensus::StateMachineHeight, error::Error, host::StateMachine, prelude::Vec};
+use crate::{error::Error, host::StateMachine, prelude::Vec};
 use alloc::string::{String, ToString};
 use codec::{Decode, Encode};
 use core::time::Duration;
@@ -158,7 +158,7 @@ impl Request {
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct PostResponse {
     /// The request that triggered this response.
-    pub(crate) post: Post,
+    pub post: Post,
     /// The response message.
     pub response: Vec<u8>,
 }
