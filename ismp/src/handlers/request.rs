@@ -47,7 +47,7 @@ where
         .into_iter()
         .filter(|req| host.request_receipt(req).is_none())
         .map(|request| {
-            let res = router.dispatch_request(request.clone());
+            let res = router.handle_request(request.clone());
             host.store_request_receipt(&request)?;
             Ok(res)
         })

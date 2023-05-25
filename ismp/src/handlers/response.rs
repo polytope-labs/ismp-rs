@@ -62,7 +62,7 @@ where
                 .into_iter()
                 .filter(|res| host.response_receipt(res).is_none())
                 .map(|response| {
-                    let res = router.dispatch_response(response.clone());
+                    let res = router.handle_response(response.clone());
                     host.store_response_receipt(&response)?;
                     Ok(res)
                 })
@@ -84,7 +84,7 @@ where
                         state_machine.verify_state_proof(host, keys.clone(), state, &proof)?;
 
                     let router = host.ismp_router();
-                    let res = router.dispatch_response(Response::Get {
+                    let res = router.handle_response(Response::Get {
                         get: request.get_request()?,
                         values: keys.into_iter().zip(values.into_iter()).collect(),
                     });

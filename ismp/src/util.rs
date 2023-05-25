@@ -50,7 +50,7 @@ pub fn hash_request<H: IsmpHost>(req: &Request) -> H256 {
 /// Return the keccak256 of a response
 pub fn hash_response<H: IsmpHost>(res: &Response) -> H256 {
     let (req, response) = match res {
-        Response::Post { ref post, response } => (post, response),
+        Response::Post(res) => (&res.post, &res.response),
         // Responses to get messages are never hashed
         _ => return Default::default(),
     };
