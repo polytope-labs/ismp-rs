@@ -41,7 +41,7 @@ fn setup_mock_client<H: IsmpHost>(host: &H) -> IntermediateState {
         },
         commitment: StateCommitment {
             timestamp: 1000,
-            ismp_root: None,
+            overlay_root: None,
             state_root: Default::default(),
         },
     };

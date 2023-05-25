@@ -38,8 +38,8 @@ pub type ConsensusClientId = [u8; 4];
 pub struct StateCommitment {
     /// Timestamp in seconds
     pub timestamp: u64,
-    /// Root hash of the request/response merkle mountain range tree.
-    pub ismp_root: Option<H256>,
+    /// Root hash of the request/response overlay trie if the state machine supports it.
+    pub overlay_root: Option<H256>,
     /// Root hash of the global state trie.
     pub state_root: H256,
 }
