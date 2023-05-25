@@ -22,7 +22,7 @@ use crate::{
     prelude::Vec,
     router::{Request, RequestResponse},
 };
-use alloc::collections::BTreeMap;
+use alloc::{boxed::Box, collections::BTreeMap};
 use codec::{Decode, Encode};
 use core::time::Duration;
 use primitive_types::H256;
