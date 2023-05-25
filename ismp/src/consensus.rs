@@ -95,7 +95,7 @@ pub trait ConsensusClient {
         host: &dyn IsmpHost,
         trusted_consensus_state: Vec<u8>,
         proof: Vec<u8>,
-    ) -> Result<(Vec<u8>, BTreeMap<StateMachineId, StateCommitmentHeight>), Error>;
+    ) -> Result<(Vec<u8>, BTreeMap<StateMachine, StateCommitmentHeight>), Error>;
 
     /// Given two distinct consensus proofs, verify that they're both valid and represent
     /// conflicting views of the network. returns Ok(()) if they're both valid.
@@ -107,15 +107,13 @@ pub trait ConsensusClient {
         proof_2: Vec<u8>,
     ) -> Result<(), Error>;
 
-    /// Return unbonding period
+    /// Return the unbonding period (i.e the time it takes for a validator's deposit to be unstaked
+    /// from the network)
     fn unbonding_period(&self) -> Duration;
 
     /// Return an implementation of a [`StateMachineClient`] for the given state mahcine identifier.
     /// Return an error if the identifier is unknown.
-    fn state_machine(
-        &self,
-        state_machine_id: StateMachineId,
-    ) -> Result<Box<dyn StateMachineClient>, Error>;
+    fn state_machine(&self, id: StateMachine) -> Result<Box<dyn StateMachineClient>, Error>;
 }
 
 /// A state machine client. An abstraction for the mechanism of state proof verification for state

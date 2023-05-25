@@ -15,7 +15,7 @@
 
 //! ISMP handler definitions
 use crate::{
-    consensus::{ConsensusClient, ConsensusClientId, StateMachineClient, StateMachineHeight},
+    consensus::{ConsensusClientId, StateMachineClient, StateMachineHeight},
     error::Error,
     host::IsmpHost,
     messaging::Message,
@@ -112,5 +112,5 @@ where
         })
     }
 
-    Ok(consensus_client.state_machine(proof_height.id)?)
+    Ok(consensus_client.state_machine(proof_height.id.state_id)?)
 }

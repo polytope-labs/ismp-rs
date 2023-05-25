@@ -16,7 +16,7 @@
 //! The ISMP consensus handler
 
 use crate::{
-    consensus::StateMachineHeight,
+    consensus::{StateMachineHeight, StateMachineId},
     error::Error,
     handlers::{ConsensusClientCreatedResult, ConsensusUpdateResult, MessageResult},
     host::IsmpHost,
@@ -55,6 +55,7 @@ where
     host.store_consensus_update_time(msg.consensus_client_id, timestamp)?;
     let mut state_updates = BTreeSet::new();
     for (id, commitment_height) in intermediate_states {
+        let id = StateMachineId { state_id: id, consensus_client: msg.consensus_client_id };
         let state_height = StateMachineHeight { id, height: commitment_height.height };
         // If a state machine is frozen, we skip it
         if host.is_state_machine_frozen(state_height).is_err() {
