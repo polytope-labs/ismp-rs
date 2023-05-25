@@ -111,7 +111,7 @@ pub trait ConsensusClient {
     /// from the network)
     fn unbonding_period(&self) -> Duration;
 
-    /// Return an implementation of a [`StateMachineClient`] for the given state mahcine identifier.
+    /// Return an implementation of a [`StateMachineClient`] for the given state machine.
     /// Return an error if the identifier is unknown.
     fn state_machine(&self, id: StateMachine) -> Result<Box<dyn StateMachineClient>, Error>;
 }
