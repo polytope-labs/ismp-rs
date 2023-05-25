@@ -19,7 +19,7 @@
 // originate from the same chain
 
 use crate::{
-    consensus::{ConsensusClientId, IntermediateState, StateMachineHeight},
+    consensus::{ConsensusClientId, StateCommitment, StateMachineHeight, StateMachineId},
     error::Error,
     router::{Request, Response},
 };
@@ -36,6 +36,15 @@ pub struct ConsensusMessage {
     pub consensus_client_id: ConsensusClientId,
 }
 
+/// Identifies a state commitment at a given height
+#[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq)]
+pub struct StateCommitmentHeight {
+    /// The state machine identifier
+    pub commitment: StateCommitment,
+    /// the corresponding block height
+    pub height: u64,
+}
+
 /// Used for creating the initial consensus state for a given consensus client.
 #[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq)]
 pub struct CreateConsensusClient {
@@ -44,7 +53,7 @@ pub struct CreateConsensusClient {
     /// Consensus client id
     pub consensus_client_id: ConsensusClientId,
     /// State machine commitments
-    pub state_machine_commitments: Vec<IntermediateState>,
+    pub state_machine_commitments: Vec<(StateMachineId, StateCommitmentHeight)>,
 }
 
 /// A request message holds a batch of requests to be dispatched from a source state machine

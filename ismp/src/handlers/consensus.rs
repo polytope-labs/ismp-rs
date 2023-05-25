@@ -16,6 +16,7 @@
 //! The ISMP consensus handler
 
 use crate::{
+    consensus::StateMachineHeight,
     error::Error,
     handlers::{ConsensusClientCreatedResult, ConsensusUpdateResult, MessageResult},
     host::IsmpHost,
@@ -24,7 +25,7 @@ use crate::{
 use alloc::collections::BTreeSet;
 
 /// This function handles verification of consensus messages for consensus clients
-pub fn handle<H>(host: &H, msg: ConsensusMessage) -> Result<MessageResult, Error>
+pub fn update_client<H>(host: &H, msg: ConsensusMessage) -> Result<MessageResult, Error>
 where
     H: IsmpHost,
 {
@@ -35,8 +36,7 @@ where
     let delay = host.challenge_period(msg.consensus_client_id);
     let now = host.timestamp();
 
-    // Ensure client is not frozen
-    consensus_client.is_frozen(&trusted_state)?;
+    host.is_consensus_client_frozen(msg.consensus_client_id)?;
 
     if (now - update_time) <= delay {
         Err(Error::ChallengePeriodNotElapsed {
@@ -54,31 +54,30 @@ where
     let timestamp = host.timestamp();
     host.store_consensus_update_time(msg.consensus_client_id, timestamp)?;
     let mut state_updates = BTreeSet::new();
-    for intermediate_state in intermediate_states {
+    for (id, commitment_height) in intermediate_states {
+        let state_height = StateMachineHeight { id, height: commitment_height.height };
         // If a state machine is frozen, we skip it
-        if host.is_frozen(intermediate_state.height)? {
+        if host.is_state_machine_frozen(state_height).is_err() {
             continue
         }
 
-        let previous_latest_height = host.latest_commitment_height(intermediate_state.height.id)?;
+        let previous_latest_height = host.latest_commitment_height(id)?;
 
         // Only allow heights greater than latest height
-        if previous_latest_height > intermediate_state.height {
+        if previous_latest_height > commitment_height.height {
             continue
         }
 
         // Skip duplicate states
-        if host.state_machine_commitment(intermediate_state.height).is_ok() {
+        if host.state_machine_commitment(state_height).is_ok() {
             continue
         }
 
-        host.store_state_machine_commitment(
-            intermediate_state.height,
-            intermediate_state.commitment,
-        )?;
+        host.store_state_machine_commitment(state_height, commitment_height.commitment)?;
 
-        state_updates.insert((previous_latest_height, intermediate_state.height));
-        host.store_latest_commitment_height(intermediate_state.height)?;
+        state_updates
+            .insert((StateMachineHeight { id, height: previous_latest_height }, state_height));
+        host.store_latest_commitment_height(state_height)?;
     }
 
     let result =
@@ -88,23 +87,24 @@ where
 }
 
 /// Handles the creation of consensus clients
-pub fn create_consensus_client<H>(
+pub fn create_client<H>(
     host: &H,
     message: CreateConsensusClient,
 ) -> Result<ConsensusClientCreatedResult, Error>
 where
     H: IsmpHost,
 {
+    // check that we have an implementation of this client
+    host.consensus_client(message.consensus_client_id)?;
+
     // Store the initial state for the consensus client
     host.store_consensus_state(message.consensus_client_id, message.consensus_state)?;
 
     // Store all intermedite state machine commitments
-    for intermediate_state in message.state_machine_commitments {
-        host.store_state_machine_commitment(
-            intermediate_state.height,
-            intermediate_state.commitment,
-        )?;
-        host.store_latest_commitment_height(intermediate_state.height)?;
+    for (id, state_commitment) in message.state_machine_commitments {
+        let height = StateMachineHeight { id, height: state_commitment.height };
+        host.store_state_machine_commitment(height, state_commitment.commitment)?;
+        host.store_latest_commitment_height(height)?;
     }
 
     host.store_consensus_update_time(message.consensus_client_id, host.timestamp())?;

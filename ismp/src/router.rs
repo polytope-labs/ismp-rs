@@ -247,7 +247,7 @@ pub trait IsmpRouter {
     /// Dispatch some requests to the ISMP router.
     /// For outgoing requests, they should be committed in state as a keccak256 hash
     /// For incoming requests, they should be dispatched to destination modules
-    fn dispatch(&self, request: Request) -> DispatchResult;
+    fn dispatch_request(&self, request: Request) -> DispatchResult;
 
     /// Dispatch request timeouts to the router which should dispatch them to modules
     fn dispatch_timeout(&self, request: Request) -> DispatchResult;
@@ -255,5 +255,5 @@ pub trait IsmpRouter {
     /// Dispatch some responses to the ISMP router.
     /// For outgoing responses, the router should commit them to host state as a keccak256 hash
     /// For incoming responses, they should be dispatched to destination modules
-    fn write_response(&self, response: Response) -> DispatchResult;
+    fn dispatch_response(&self, response: Response) -> DispatchResult;
 }

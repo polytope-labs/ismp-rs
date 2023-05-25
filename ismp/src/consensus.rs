@@ -18,10 +18,11 @@
 use crate::{
     error::Error,
     host::{IsmpHost, StateMachine},
-    messaging::Proof,
+    messaging::{Proof, StateCommitmentHeight},
     prelude::Vec,
     router::{Request, RequestResponse},
 };
+use alloc::collections::BTreeMap;
 use codec::{Decode, Encode};
 use core::time::Duration;
 use primitive_types::H256;
@@ -88,22 +89,39 @@ pub struct StateMachineHeight {
 /// We define the consensus client as a module that handles logic for consensus proof verification,
 /// and State-Proof verification as well.
 pub trait ConsensusClient {
-    /// Should decode the scale encoded trusted consensus state and new consensus proof, verifying
-    /// that:
-    /// - check for byzantine behaviour
-    /// - verify the consensus proofs
-    /// - finally return the new consensusState and verified state commitments.
+    /// Verify the associated consensus proof, using the trusted consensus state.
     fn verify_consensus(
         &self,
         host: &dyn IsmpHost,
         trusted_consensus_state: Vec<u8>,
         proof: Vec<u8>,
-    ) -> Result<(Vec<u8>, Vec<IntermediateState>), Error>;
+    ) -> Result<(Vec<u8>, BTreeMap<StateMachineId, StateCommitmentHeight>), Error>;
+
+    /// Given two distinct consensus proofs, verify that they're both valid and represent
+    /// conflicting views of the network. returns Ok(()) if they're both valid.
+    fn verify_fraud_proof(
+        &self,
+        host: &dyn IsmpHost,
+        trusted_consensus_state: Vec<u8>,
+        proof_1: Vec<u8>,
+        proof_2: Vec<u8>,
+    ) -> Result<(), Error>;
 
     /// Return unbonding period
     fn unbonding_period(&self) -> Duration;
 
-    /// Verify the merkle mountain range membership proof of a batch of requests/responses.
+    /// Return an implementation of a [`StateMachineClient`] for the given state mahcine identifier.
+    /// Return an error if the identifier is unknown.
+    fn state_machine(
+        &self,
+        state_machine_id: StateMachineId,
+    ) -> Result<Box<dyn StateMachineClient>, Error>;
+}
+
+/// A state machine client. An abstraction for the mechanism of state proof verification for state
+/// machines
+pub trait StateMachineClient {
+    /// Verify the overlay membership proof of a batch of requests/responses.
     fn verify_membership(
         &self,
         host: &dyn IsmpHost,
@@ -123,7 +141,4 @@ pub trait ConsensusClient {
         root: StateCommitment,
         proof: &Proof,
     ) -> Result<Vec<Option<Vec<u8>>>, Error>;
-
-    /// Decode trusted state and check if consensus client is frozen
-    fn is_frozen(&self, trusted_consensus_state: &[u8]) -> Result<(), Error>;
 }

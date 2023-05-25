@@ -224,7 +224,7 @@ impl IsmpHost for Host {
 pub struct MockRouter(pub Host);
 
 impl IsmpRouter for MockRouter {
-    fn dispatch(&self, request: Request) -> DispatchResult {
+    fn dispatch_request(&self, request: Request) -> DispatchResult {
         let host = &self.0.clone();
         if request.dest_chain() != host.host_state_machine() {
             let hash = hash_request::<Host>(&request);
@@ -256,7 +256,7 @@ impl IsmpRouter for MockRouter {
         })
     }
 
-    fn write_response(&self, response: Response) -> DispatchResult {
+    fn dispatch_response(&self, response: Response) -> DispatchResult {
         let host = self.0.clone();
         if response.dest_chain() != host.host_state_machine() {
             let hash = hash_response::<Host>(&response);
