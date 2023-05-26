@@ -16,10 +16,12 @@
 //! IsmpRouter definition
 
 use crate::{error::Error, host::StateMachine, prelude::Vec};
-use alloc::string::{String, ToString};
+use alloc::{
+    collections::BTreeMap,
+    string::{String, ToString},
+};
 use codec::{Decode, Encode};
 use core::time::Duration;
-use std::collections::BTreeMap;
 
 /// The ISMP POST request.
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, scale_info::TypeInfo)]

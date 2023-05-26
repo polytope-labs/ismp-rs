@@ -80,8 +80,7 @@ where
                     let keys = request.keys().ok_or_else(|| {
                         Error::ImplementationSpecific("Missing keys for get request".to_string())
                     })?;
-                    let values =
-                        state_machine.verify_state_proof(host, keys.clone(), state, &proof)?;
+                    let values = state_machine.verify_state_proof(host, keys, state, &proof)?;
 
                     let router = host.ismp_router();
                     let res = router.handle_response(Response::Get(GetResponse {
