@@ -1,6 +1,6 @@
 # ismp-rs ![Unit Tests](https://github.com/polytope-labs/ismp-rs/actions/workflows/ci.yml/badge.svg)
 
-Rust implementation of the Interoperable State Machine Protocol in Rust. This project is This project is [funded by the web3 foundation](https://github.com/w3f/Grants-Program/blob/master/applications/ismp.md).
+Rust implementation of the Interoperable State Machine Protocol. This project is This project is [funded by the web3 foundation](https://github.com/w3f/Grants-Program/blob/master/applications/ismp.md).
 
 ## Overview
 
