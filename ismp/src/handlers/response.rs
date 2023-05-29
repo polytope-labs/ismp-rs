@@ -76,7 +76,7 @@ where
             // individually
             requests
                 .into_iter()
-                .filter(|req| host.request_receipt(&req).is_none())
+                .filter(|req| host.request_receipt(req).is_none())
                 .map(|request| {
                     let keys = request.keys().ok_or_else(|| {
                         Error::ImplementationSpecific("Missing keys for get request".to_string())
