@@ -271,7 +271,7 @@ pub struct MockRouter(pub Host);
 impl IsmpRouter for MockRouter {
     fn handle_request(&self, request: Post) -> DispatchResult {
         let host = &self.0.clone();
-        let request = Request::Post(request.clone());
+        let request = Request::Post(request);
         if request.dest_chain() != host.host_state_machine() {
         } else {
             host.store_request_receipt(&request).unwrap();
