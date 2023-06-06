@@ -17,9 +17,8 @@
 
 use crate::{
     error::Error,
-    router::{Request, Response},
+    router::{Post as PostRequest, Request, Response},
 };
-use crate::router::Post as PostRequest;
 
 /// Individual modules which live on a state machine must conform to this interface in order to send
 /// and receive ISMP requests and reponses
