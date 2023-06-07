@@ -50,7 +50,7 @@ where
             host.request_receipt(&req).is_none() && !req.timed_out(state.timestamp())
         })
         .map(|request| {
-            let cb = router.find_module_by_id(request.to.clone())?;
+            let cb = router.module_for_id(request.to.clone())?;
             let res = cb.on_accept(request.clone());
             host.store_request_receipt(&Request::Post(request))?;
             Ok(res)

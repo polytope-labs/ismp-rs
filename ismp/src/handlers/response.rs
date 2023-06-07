@@ -62,7 +62,7 @@ where
                 .into_iter()
                 .filter(|res| host.response_receipt(res).is_none())
                 .map(|response| {
-                    let cb = router.find_module_by_id(response.destination_module())?;
+                    let cb = router.module_for_id(response.destination_module())?;
                     let res = cb.on_response(response.clone());
                     host.store_response_receipt(&response)?;
                     Ok(res)
@@ -85,7 +85,7 @@ where
                     let values = state_machine.verify_state_proof(host, keys, state, &proof)?;
 
                     let router = host.ismp_router();
-                    let cb = router.find_module_by_id(request.source_module())?;
+                    let cb = router.module_for_id(request.source_module())?;
                     let res = cb.on_response(Response::Get(GetResponse {
                         get: request.get_request()?,
                         values,

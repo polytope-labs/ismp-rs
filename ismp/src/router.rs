@@ -266,7 +266,7 @@ pub trait IsmpRouter {
     /// Get module handler by id
     /// Should decode the module id and return a handler to the appropriate `IsmpModule`
     /// implementation
-    fn find_module_by_id(&self, bytes: Vec<u8>) -> Result<Box<dyn IsmpModule>, Error>;
+    fn module_for_id(&self, bytes: Vec<u8>) -> Result<Box<dyn IsmpModule>, Error>;
 }
 
 /// Simplified POST request, intended to be used for sending outgoing requests
