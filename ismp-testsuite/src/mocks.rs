@@ -299,7 +299,7 @@ impl IsmpModule for MockModule {
 pub struct MockRouter(pub Host);
 
 impl IsmpRouter for MockRouter {
-    fn find_module_by_id(&self, _bytes: Vec<u8>) -> Result<Box<dyn IsmpModule>, Error> {
+    fn module_for_id(&self, _bytes: Vec<u8>) -> Result<Box<dyn IsmpModule>, Error> {
         Ok(Box::new(MockModule))
     }
 }
