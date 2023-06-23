@@ -70,7 +70,7 @@ where
                             nonce: response.nonce(),
                         })
                         .map_err(|e| DispatchError {
-                            msg: format!("{:?}", e),
+                            msg: format!("{e:?}"),
                             nonce: response.nonce(),
                             source_chain: response.source_chain(),
                             dest_chain: response.dest_chain(),
@@ -84,9 +84,9 @@ where
             let requests = requests
                 .into_iter()
                 .filter(|request| {
-                    let commitment = hash_request::<H>(&request);
+                    let commitment = hash_request::<H>(request);
                     host.request_commitment(commitment).is_ok() &&
-                        host.response_receipt(&request).is_none()
+                        host.response_receipt(request).is_none()
                 })
                 .collect::<Vec<_>>();
             // Ensure the proof height is greater than each retrieval height specified in the Get
@@ -115,7 +115,7 @@ where
                             nonce: request.nonce(),
                         })
                         .map_err(|e| DispatchError {
-                            msg: format!("{:?}", e),
+                            msg: format!("{e:?}"),
                             nonce: request.nonce(),
                             source_chain: request.source_chain(),
                             dest_chain: request.dest_chain(),
