@@ -137,4 +137,9 @@ pub enum Error {
     InsufficientProofHeight,
     /// An Ismp Module was not found for the given raw id
     ModuleNotFound(Vec<u8>),
+    /// Unknown consensus state id
+    ConsensusStateIdNotRecognized {
+        /// Consensus state Id
+        consensus_state_id: Vec<u8>,
+    },
 }

@@ -32,8 +32,8 @@ use codec::{Decode, Encode};
 pub struct ConsensusMessage {
     /// Scale Encoded Consensus Proof
     pub consensus_proof: Vec<u8>,
-    /// Consensus client id
-    pub consensus_client_id: ConsensusClientId,
+    /// The consensus state Id
+    pub consensus_state_id: Vec<u8>,
 }
 
 /// A fraud proof message is used to report byzantine misbehaviour in a consensus system.
@@ -43,8 +43,8 @@ pub struct FraudProofMessage {
     pub proof_1: Vec<u8>,
     /// The second consensus Proof
     pub proof_2: Vec<u8>,
-    /// Consensus client id
-    pub consensus_client_id: ConsensusClientId,
+    /// The consensus state Id
+    pub consensus_state_id: Vec<u8>,
 }
 
 /// Identifies a state commitment at a given height
@@ -63,6 +63,8 @@ pub struct CreateConsensusClient {
     pub consensus_state: Vec<u8>,
     /// Consensus client id
     pub consensus_client_id: ConsensusClientId,
+    /// The consensus state Id
+    pub consensus_state_id: Vec<u8>,
     /// State machine commitments
     pub state_machine_commitments: Vec<(StateMachineId, StateCommitmentHeight)>,
 }

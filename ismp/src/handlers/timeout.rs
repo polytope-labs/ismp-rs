@@ -32,8 +32,8 @@ where
 {
     let results = match msg {
         TimeoutMessage::Post { requests, timeout_proof } => {
-            let state_machine = validate_state_machine(host, timeout_proof.height)?;
-            let state = host.state_machine_commitment(timeout_proof.height)?;
+            let state_machine = validate_state_machine(host, timeout_proof.height.clone())?;
+            let state = host.state_machine_commitment(timeout_proof.height.clone())?;
             for request in &requests {
                 // Ensure a commitment exists for all requests in the batch
                 let commitment = hash_request::<H>(request);

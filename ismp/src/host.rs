@@ -48,10 +48,16 @@ pub trait IsmpHost {
     ) -> Result<StateCommitment, Error>;
 
     /// Should return the host timestamp when this consensus client was last updated
-    fn consensus_update_time(&self, id: ConsensusClientId) -> Result<Duration, Error>;
+    fn consensus_update_time(&self, consensus_state_id: Vec<u8>) -> Result<Duration, Error>;
 
-    /// Should return the encoded consensus state for a consensus client
-    fn consensus_state(&self, id: ConsensusClientId) -> Result<Vec<u8>, Error>;
+    /// Should return the consensus client id for this consensus state id
+    fn consensus_client_from_state_id(
+        &self,
+        consensus_state_id: Vec<u8>,
+    ) -> Option<ConsensusClientId>;
+
+    /// Should return the encoded consensus state for a consensus state id provided
+    fn consensus_state(&self, consensus_state_id: Vec<u8>) -> Result<Vec<u8>, Error>;
 
     /// Should return the current timestamp on the host
     fn timestamp(&self) -> Duration;
@@ -60,8 +66,8 @@ pub trait IsmpHost {
     /// or [`Error::FrozenStateMachine`] if it is.
     fn is_state_machine_frozen(&self, machine: StateMachineHeight) -> Result<(), Error>;
 
-    /// Checks if a state machine is frozen at the provided height
-    fn is_consensus_client_frozen(&self, client: ConsensusClientId) -> Result<(), Error>;
+    /// Checks if a consensus state is frozen at the provided height
+    fn is_consensus_client_frozen(&self, consensus_state_id: Vec<u8>) -> Result<(), Error>;
 
     /// Should return an error if request commitment does not exist in storage
     fn request_commitment(&self, req: H256) -> Result<(), Error>;
@@ -75,13 +81,25 @@ pub trait IsmpHost {
     /// Should return Some(()) if a response has been received for the given request
     fn response_receipt(&self, res: &Request) -> Option<()>;
 
+    /// Store a map of consensus_state_id to the consensus_client_id
+    /// Should return an error if the consensus_state_id already exists
+    fn store_consensus_state_id(
+        &self,
+        consensus_state_id: Vec<u8>,
+        client_id: ConsensusClientId,
+    ) -> Result<(), Error>;
+
     /// Store an encoded consensus state
-    fn store_consensus_state(&self, id: ConsensusClientId, state: Vec<u8>) -> Result<(), Error>;
+    fn store_consensus_state(
+        &self,
+        consensus_state_id: Vec<u8>,
+        consensus_state: Vec<u8>,
+    ) -> Result<(), Error>;
 
     /// Store the timestamp when the consensus client was updated
     fn store_consensus_update_time(
         &self,
-        id: ConsensusClientId,
+        consensus_state_id: Vec<u8>,
         timestamp: Duration,
     ) -> Result<(), Error>;
 
@@ -95,8 +113,8 @@ pub trait IsmpHost {
     /// Freeze a state machine at the given height
     fn freeze_state_machine(&self, height: StateMachineHeight) -> Result<(), Error>;
 
-    /// Freeze a consensus client with the given identifier
-    fn freeze_consensus_client(&self, client: ConsensusClientId) -> Result<(), Error>;
+    /// Freeze a consensus state with the given identifier
+    fn freeze_consensus_client(&self, consensus_state_id: Vec<u8>) -> Result<(), Error>;
 
     /// Store latest height for a state machine
     fn store_latest_commitment_height(&self, height: StateMachineHeight) -> Result<(), Error>;
@@ -123,10 +141,14 @@ pub trait IsmpHost {
     fn challenge_period(&self, id: ConsensusClientId) -> Duration;
 
     /// Check if the client has expired since the last update
-    fn is_expired(&self, consensus_id: ConsensusClientId) -> Result<(), Error> {
+    fn is_expired(
+        &self,
+        consensus_id: ConsensusClientId,
+        consensus_state_id: Vec<u8>,
+    ) -> Result<(), Error> {
         let host_timestamp = self.timestamp();
         let unbonding_period = self.consensus_client(consensus_id)?.unbonding_period();
-        let last_update = self.consensus_update_time(consensus_id)?;
+        let last_update = self.consensus_update_time(consensus_state_id)?;
         if host_timestamp.saturating_sub(last_update) >= unbonding_period {
             Err(Error::UnbondingPeriodElapsed { consensus_id })?
         }
@@ -162,6 +184,12 @@ pub enum StateMachine {
     /// Kusama parachains
     #[codec(index = 5)]
     Kusama(u32),
+    /// State machines running on grandpa consensus client
+    #[codec(index = 5)]
+    Grandpa(u32),
+    /// State machines chains running on beefy consensus client
+    #[codec(index = 6)]
+    Beefy(u32),
 }
 
 impl ToString for StateMachine {
@@ -173,6 +201,8 @@ impl ToString for StateMachine {
             StateMachine::Base => "BASE".to_string(),
             StateMachine::Polkadot(id) => format!("POLKADOT-{id}"),
             StateMachine::Kusama(id) => format!("KUSAMA-{id}"),
+            StateMachine::Grandpa(id) => format!("GRANDPA-{id}"),
+            StateMachine::Beefy(id) => format!("BEEFY-{id}"),
         }
     }
 }
@@ -201,6 +231,22 @@ impl FromStr for StateMachine {
                     .and_then(|id| u32::from_str(id).ok())
                     .ok_or_else(|| format!("invalid state machine: {name}"))?;
                 StateMachine::Kusama(id)
+            }
+            name if name.starts_with("GRANDPA-") => {
+                let id = name
+                    .split('-')
+                    .last()
+                    .and_then(|id| u32::from_str(id).ok())
+                    .ok_or_else(|| format!("invalid state machine: {name}"))?;
+                StateMachine::Grandpa(id)
+            }
+            name if name.starts_with("BEEFY-") => {
+                let id = name
+                    .split('-')
+                    .last()
+                    .and_then(|id| u32::from_str(id).ok())
+                    .ok_or_else(|| format!("invalid state machine: {name}"))?;
+                StateMachine::Beefy(id)
             }
             name => Err(format!("Unkown state machine: {name}"))?,
         };

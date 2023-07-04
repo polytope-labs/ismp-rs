@@ -64,19 +64,19 @@ pub struct IntermediateState {
 /// Since consensus systems may come to conensus about the state of multiple state machines, we
 /// identify each state machine individually.
 #[derive(
-    Debug, Clone, Copy, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq, Hash, Ord, PartialOrd,
+    Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq, Hash, Ord, PartialOrd,
 )]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct StateMachineId {
     /// The state machine identifier
     pub state_id: StateMachine,
-    /// It's consensus client identifier
-    pub consensus_client: ConsensusClientId,
+    /// It's consensus state identifier
+    pub consensus_state_id: Vec<u8>,
 }
 
 /// Identifies a state machine at a given height
 #[derive(
-    Debug, Clone, Copy, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq, Hash, Ord, PartialOrd,
+    Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq, Hash, Ord, PartialOrd,
 )]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct StateMachineHeight {
@@ -93,6 +93,7 @@ pub trait ConsensusClient {
     fn verify_consensus(
         &self,
         host: &dyn IsmpHost,
+        consensus_state_id: Vec<u8>,
         trusted_consensus_state: Vec<u8>,
         proof: Vec<u8>,
     ) -> Result<(Vec<u8>, BTreeMap<StateMachine, StateCommitmentHeight>), Error>;

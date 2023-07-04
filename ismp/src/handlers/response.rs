@@ -31,9 +31,9 @@ pub fn handle<H>(host: &H, msg: ResponseMessage) -> Result<MessageResult, Error>
 where
     H: IsmpHost,
 {
-    let state_machine = validate_state_machine(host, msg.proof().height)?;
+    let state_machine = validate_state_machine(host, msg.proof().height.clone())?;
 
-    let state = host.state_machine_commitment(msg.proof().height)?;
+    let state = host.state_machine_commitment(msg.proof().height.clone())?;
 
     let result = match msg {
         ResponseMessage::Post { responses, proof } => {
