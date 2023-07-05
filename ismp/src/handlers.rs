@@ -123,7 +123,7 @@ where
         return Err(Error::ChallengePeriodNotElapsed {
             consensus_id: consensus_client_id,
             current_time: host.timestamp(),
-            update_time: host.consensus_update_time(proof_height.id.consensus_state_id.clone())?,
+            update_time: host.consensus_update_time(proof_height.id.consensus_state_id)?,
         })
     }
 

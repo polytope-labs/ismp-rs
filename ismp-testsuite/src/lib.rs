@@ -114,7 +114,7 @@ pub fn check_challenge_period<H: IsmpHost>(host: &H) -> Result<(), &'static str>
     // Timeout mesaage handling check
     let timeout_message = Message::Timeout(TimeoutMessage::Post {
         requests: vec![request],
-        timeout_proof: Proof { height: intermediate_state.height.clone(), proof: vec![] },
+        timeout_proof: Proof { height: intermediate_state.height, proof: vec![] },
     });
 
     let res = handle_incoming_message(host, timeout_message);
