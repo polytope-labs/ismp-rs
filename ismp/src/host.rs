@@ -137,7 +137,7 @@ pub trait IsmpHost {
     where
         Self: Sized;
 
-    /// Should return the configured delay period for a consensus client
+    /// Should return the configured delay period for a consensus state
     fn challenge_period(&self, consensus_state_id: Vec<u8>) -> Option<Duration>;
 
     /// Check if the client has expired since the last update
