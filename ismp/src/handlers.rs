@@ -80,16 +80,16 @@ where
 
 /// This function checks to see that the delay period configured on the host chain
 /// for the state machine has elasped.
-fn verify_delay_passed<H>(
-    host: &H,
-    consensus_client_id: ConsensusClientId,
-    proof_height: &StateMachineHeight,
-) -> Result<bool, Error>
+fn verify_delay_passed<H>(host: &H, proof_height: &StateMachineHeight) -> Result<bool, Error>
 where
     H: IsmpHost,
 {
     let update_time = host.consensus_update_time(proof_height.id.consensus_state_id.clone())?;
-    let delay_period = host.challenge_period(consensus_client_id);
+    let delay_period = host
+        .challenge_period(proof_height.id.consensus_state_id.clone())
+        .ok_or_else(|| Error::ChallengePeriodNotConfigured {
+            consensus_state_id: proof_height.id.consensus_state_id.clone(),
+        })?;
     let current_timestamp = host.timestamp();
     Ok(current_timestamp - update_time > delay_period)
 }
@@ -119,9 +119,9 @@ where
     host.is_state_machine_frozen(proof_height.clone())?;
 
     // Ensure delay period has elapsed
-    if !verify_delay_passed(host, consensus_client_id, &proof_height)? {
+    if !verify_delay_passed(host, &proof_height)? {
         return Err(Error::ChallengePeriodNotElapsed {
-            consensus_id: consensus_client_id,
+            consensus_state_id: proof_height.id.consensus_state_id.clone(),
             current_time: host.timestamp(),
             update_time: host.consensus_update_time(proof_height.id.consensus_state_id)?,
         })

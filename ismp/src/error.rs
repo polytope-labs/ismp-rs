@@ -29,13 +29,13 @@ pub enum Error {
     /// consensus updates.
     UnbondingPeriodElapsed {
         /// The consensus client identifier
-        consensus_id: ConsensusClientId,
+        consensus_state_id: Vec<u8>,
     },
     /// The challange period for the given consensus client has not yet elapsed and cannot process
     /// new consensus updates in the mean time.
     ChallengePeriodNotElapsed {
         /// The consensus client identifier
-        consensus_id: ConsensusClientId,
+        consensus_state_id: Vec<u8>,
         /// The last time the consensus client was updated
         update_time: Duration,
         /// The current time
@@ -139,6 +139,18 @@ pub enum Error {
     ModuleNotFound(Vec<u8>),
     /// Unknown consensus state id
     ConsensusStateIdNotRecognized {
+        /// Consensus state Id
+        consensus_state_id: Vec<u8>,
+    },
+
+    /// Challenge period has not been configured for this consensus state
+    ChallengePeriodNotConfigured {
+        /// Consensus state Id
+        consensus_state_id: Vec<u8>,
+    },
+
+    /// Unbonding period has not been configured for this consensus state
+    UnnbondingPeriodNotConfigured {
         /// Consensus state Id
         consensus_state_id: Vec<u8>,
     },

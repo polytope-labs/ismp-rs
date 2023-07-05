@@ -53,10 +53,6 @@ impl ConsensusClient for MockClient {
         Ok(())
     }
 
-    fn unbonding_period(&self) -> Duration {
-        Duration::from_secs(60 * 60 * 60)
-    }
-
     fn state_machine(&self, _id: StateMachine) -> Result<Box<dyn StateMachineClient>, Error> {
         Ok(Box::new(MockStateMachineClient))
     }
@@ -271,8 +267,12 @@ impl IsmpHost for Host {
         sp_core::keccak_256(bytes).into()
     }
 
-    fn challenge_period(&self, _id: ConsensusClientId) -> Duration {
-        Duration::from_secs(60 * 60)
+    fn challenge_period(&self, _consensus_state_id: Vec<u8>) -> Option<Duration> {
+        Some(Duration::from_secs(60 * 60))
+    }
+
+    fn unbonding_period(&self, _consensus_state_id: Vec<u8>) -> Option<Duration> {
+        Some(Duration::from_secs(60 * 60 * 60))
     }
 
     fn ismp_router(&self) -> Box<dyn IsmpRouter> {

@@ -138,23 +138,28 @@ pub trait IsmpHost {
         Self: Sized;
 
     /// Should return the configured delay period for a consensus client
-    fn challenge_period(&self, id: ConsensusClientId) -> Duration;
+    fn challenge_period(&self, consensus_state_id: Vec<u8>) -> Option<Duration>;
 
     /// Check if the client has expired since the last update
-    fn is_expired(
-        &self,
-        consensus_id: ConsensusClientId,
-        consensus_state_id: Vec<u8>,
-    ) -> Result<(), Error> {
+    fn is_expired(&self, consensus_state_id: Vec<u8>) -> Result<(), Error> {
         let host_timestamp = self.timestamp();
-        let unbonding_period = self.consensus_client(consensus_id)?.unbonding_period();
-        let last_update = self.consensus_update_time(consensus_state_id)?;
+        let unbonding_period =
+            self.unbonding_period(consensus_state_id.clone()).ok_or_else(|| {
+                Error::UnnbondingPeriodNotConfigured {
+                    consensus_state_id: consensus_state_id.clone(),
+                }
+            })?;
+        let last_update = self.consensus_update_time(consensus_state_id.clone())?;
         if host_timestamp.saturating_sub(last_update) >= unbonding_period {
-            Err(Error::UnbondingPeriodElapsed { consensus_id })?
+            Err(Error::UnbondingPeriodElapsed { consensus_state_id })?
         }
 
         Ok(())
     }
+
+    /// Return the unbonding period (i.e the time it takes for a validator's deposit to be unstaked
+    /// from the network)
+    fn unbonding_period(&self, consensus_state_id: Vec<u8>) -> Option<Duration>;
 
     /// Return a handle to the router
     fn ismp_router(&self) -> Box<dyn IsmpRouter>;

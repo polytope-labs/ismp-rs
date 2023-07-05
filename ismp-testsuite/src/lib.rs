@@ -75,7 +75,7 @@ pub fn check_challenge_period<H: IsmpHost>(host: &H) -> Result<(), &'static str>
     });
     let intermediate_state = setup_mock_client(host);
     // Set the previous update time
-    let challenge_period = host.challenge_period(MOCK_CONSENSUS_CLIENT_ID);
+    let challenge_period = host.challenge_period(mock_consensus_state_id()).unwrap();
     let previous_update_time = host.timestamp() - (challenge_period / 2);
     host.store_consensus_update_time(mock_consensus_state_id(), previous_update_time).unwrap();
 
@@ -130,8 +130,7 @@ pub fn check_client_expiry<H: IsmpHost>(host: &H) -> Result<(), &'static str> {
     });
     setup_mock_client(host);
     // Set the previous update time
-    let client = host.consensus_client(MOCK_CONSENSUS_CLIENT_ID).unwrap();
-    let unbonding_period = client.unbonding_period();
+    let unbonding_period = host.unbonding_period(mock_consensus_state_id()).unwrap();
     let previous_update_time = host.timestamp() - unbonding_period;
     host.store_consensus_update_time(mock_consensus_state_id(), previous_update_time).unwrap();
 
@@ -145,7 +144,7 @@ pub fn check_client_expiry<H: IsmpHost>(host: &H) -> Result<(), &'static str> {
 pub fn frozen_check<H: IsmpHost>(host: &H) -> Result<(), &'static str> {
     let intermediate_state = setup_mock_client(host);
     // Set the previous update time
-    let challenge_period = host.challenge_period(MOCK_CONSENSUS_CLIENT_ID);
+    let challenge_period = host.challenge_period(mock_consensus_state_id()).unwrap();
     let previous_update_time = host.timestamp() - (challenge_period * 2);
     host.store_consensus_update_time(mock_consensus_state_id(), previous_update_time).unwrap();
 
@@ -202,7 +201,7 @@ pub fn timeout_post_processing_check<H: IsmpHost>(
     dispatcher: &dyn IsmpDispatcher,
 ) -> Result<(), &'static str> {
     let intermediate_state = setup_mock_client(host);
-    let challenge_period = host.challenge_period(MOCK_CONSENSUS_CLIENT_ID);
+    let challenge_period = host.challenge_period(mock_consensus_state_id()).unwrap();
     let previous_update_time = host.timestamp() - (challenge_period * 2);
     host.store_consensus_update_time(mock_consensus_state_id(), previous_update_time).unwrap();
     let dispatch_post = DispatchPost {

@@ -58,7 +58,7 @@ pub struct StateCommitmentHeight {
 
 /// Used for creating the initial consensus state for a given consensus client.
 #[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq)]
-pub struct CreateConsensusClient {
+pub struct CreateConsensusState {
     /// Scale encoded consensus state
     pub consensus_state: Vec<u8>,
     /// Consensus client id

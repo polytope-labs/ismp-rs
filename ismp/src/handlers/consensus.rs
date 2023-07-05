@@ -20,7 +20,7 @@ use crate::{
     error::Error,
     handlers::{ConsensusClientCreatedResult, ConsensusUpdateResult, MessageResult},
     host::IsmpHost,
-    messaging::{ConsensusMessage, CreateConsensusClient, FraudProofMessage},
+    messaging::{ConsensusMessage, CreateConsensusState, FraudProofMessage},
 };
 use alloc::{collections::BTreeSet, string::ToString};
 
@@ -38,20 +38,22 @@ where
     let trusted_state = host.consensus_state(msg.consensus_state_id.clone())?;
 
     let update_time = host.consensus_update_time(msg.consensus_state_id.clone())?;
-    let delay = host.challenge_period(consensus_client_id);
+    let delay = host.challenge_period(msg.consensus_state_id.clone()).ok_or_else(|| {
+        Error::ChallengePeriodNotConfigured { consensus_state_id: msg.consensus_state_id.clone() }
+    })?;
     let now = host.timestamp();
 
     host.is_consensus_client_frozen(msg.consensus_state_id.clone())?;
 
     if (now - update_time) <= delay {
         Err(Error::ChallengePeriodNotElapsed {
-            consensus_id: consensus_client_id,
+            consensus_state_id: msg.consensus_state_id.clone(),
             current_time: now,
             update_time,
         })?
     }
 
-    host.is_expired(consensus_client_id, msg.consensus_state_id.clone())?;
+    host.is_expired(msg.consensus_state_id.clone())?;
 
     let (new_state, intermediate_states) = consensus_client.verify_consensus(
         host,
@@ -105,7 +107,7 @@ where
 /// Handles the creation of consensus clients
 pub fn create_client<H>(
     host: &H,
-    message: CreateConsensusClient,
+    message: CreateConsensusState,
 ) -> Result<ConsensusClientCreatedResult, Error>
 where
     H: IsmpHost,
