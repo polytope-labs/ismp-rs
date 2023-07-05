@@ -115,6 +115,11 @@ where
     // check that we have an implementation of this client
     host.consensus_client(message.consensus_client_id)?;
 
+    if host.consensus_client_from_state_id(message.consensus_state_id.clone()).is_some() {
+        return Err(Error::DuplicateConsensusStateId {
+            consensus_state_id: message.consensus_state_id,
+        })
+    }
     // Store the initial state for the consensus client
     host.store_consensus_state(message.consensus_state_id.clone(), message.consensus_state)?;
 

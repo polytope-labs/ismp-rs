@@ -149,6 +149,12 @@ pub enum Error {
         consensus_state_id: Vec<u8>,
     },
 
+    /// Consensus state id already exists
+    DuplicateConsensusStateId {
+        /// Consensus state Id
+        consensus_state_id: Vec<u8>,
+    },
+
     /// Unbonding period has not been configured for this consensus state
     UnnbondingPeriodNotConfigured {
         /// Consensus state Id
