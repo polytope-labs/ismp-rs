@@ -191,10 +191,10 @@ pub enum StateMachine {
     Kusama(u32),
     /// State machines running on grandpa consensus client
     #[codec(index = 5)]
-    Grandpa(u32),
+    Grandpa([u8; 8]),
     /// State machines chains running on beefy consensus client
     #[codec(index = 6)]
-    Beefy(u32),
+    Beefy([u8; 8]),
 }
 
 impl ToString for StateMachine {
@@ -206,8 +206,14 @@ impl ToString for StateMachine {
             StateMachine::Base => "BASE".to_string(),
             StateMachine::Polkadot(id) => format!("POLKADOT-{id}"),
             StateMachine::Kusama(id) => format!("KUSAMA-{id}"),
-            StateMachine::Grandpa(id) => format!("GRANDPA-{id}"),
-            StateMachine::Beefy(id) => format!("BEEFY-{id}"),
+            StateMachine::Grandpa(id) => format!(
+                "GRANDPA-{}",
+                serde_json::to_string(id).expect("Array to string is infallible")
+            ),
+            StateMachine::Beefy(id) => format!(
+                "BEEFY-{}",
+                serde_json::to_string(id).expect("Array to string is infallible")
+            ),
         }
     }
 }
@@ -241,7 +247,7 @@ impl FromStr for StateMachine {
                 let id = name
                     .split('-')
                     .last()
-                    .and_then(|id| u32::from_str(id).ok())
+                    .and_then(|id| serde_json::from_str(id).ok())
                     .ok_or_else(|| format!("invalid state machine: {name}"))?;
                 StateMachine::Grandpa(id)
             }
@@ -249,13 +255,32 @@ impl FromStr for StateMachine {
                 let id = name
                     .split('-')
                     .last()
-                    .and_then(|id| u32::from_str(id).ok())
+                    .and_then(|id| serde_json::from_str(id).ok())
                     .ok_or_else(|| format!("invalid state machine: {name}"))?;
                 StateMachine::Beefy(id)
             }
-            name => Err(format!("Unkown state machine: {name}"))?,
+            name => Err(format!("Unknown state machine: {name}"))?,
         };
 
         Ok(s)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::host::StateMachine;
+    use alloc::string::ToString;
+    use core::str::FromStr;
+
+    #[test]
+    fn state_machine_conversions() {
+        let grandpa = StateMachine::Grandpa(*b"standard");
+        let beefy = StateMachine::Beefy(*b"standard");
+
+        let grandpa_string = grandpa.to_string();
+        let beefy_string = beefy.to_string();
+
+        assert_eq!(grandpa, StateMachine::from_str(&grandpa_string).unwrap());
+        assert_eq!(beefy, StateMachine::from_str(&beefy_string).unwrap());
     }
 }
