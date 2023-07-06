@@ -26,7 +26,6 @@ use crate::{
     router::{Post, Request, Response},
 };
 use alloc::{string::ToString, vec::Vec};
-use std::time::Duration;
 use codec::{Decode, Encode};
 
 /// A consensus message is used to update the state of a consensus client and its children state
@@ -69,7 +68,7 @@ pub struct CreateConsensusState {
     /// The consensus state Id
     pub consensus_state_id: ConsensusStateId,
     /// Unbonding period for this consensus state.
-    pub unbonding_period: Duration,
+    pub unbonding_period: u64,
     /// State machine commitments
     pub state_machine_commitments: Vec<(StateMachineId, StateCommitmentHeight)>,
 }

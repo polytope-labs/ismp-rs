@@ -105,7 +105,7 @@ pub trait IsmpHost {
     fn store_unbonding_period(
         &self,
         consensus_state_id: ConsensusStateId,
-        period: Duration,
+        period: u64,
     ) -> Result<(), Error>;
 
     /// Store the timestamp when the consensus client was updated
