@@ -25,7 +25,7 @@ use ismp::{
         ConsensusStateId, IntermediateState, StateCommitment, StateMachineHeight, StateMachineId,
     },
     handlers::handle_incoming_message,
-    host::{IsmpHost, StateMachine},
+    host::{Ethereum, IsmpHost, StateMachine},
     messaging::{
         ConsensusMessage, Message, Proof, RequestMessage, ResponseMessage, TimeoutMessage,
     },
@@ -34,7 +34,6 @@ use ismp::{
     },
     util::hash_request,
 };
-use ismp::host::Ethereum;
 
 fn mock_consensus_state_id() -> ConsensusStateId {
     *b"mock"
