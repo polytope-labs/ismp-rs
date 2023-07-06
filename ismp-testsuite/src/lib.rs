@@ -21,7 +21,9 @@ mod tests;
 
 use crate::mocks::MOCK_CONSENSUS_CLIENT_ID;
 use ismp::{
-    consensus::{IntermediateState, StateCommitment, StateMachineHeight, StateMachineId},
+    consensus::{
+        ConsensusStateId, IntermediateState, StateCommitment, StateMachineHeight, StateMachineId,
+    },
     handlers::handle_incoming_message,
     host::{IsmpHost, StateMachine},
     messaging::{
@@ -33,8 +35,8 @@ use ismp::{
     util::hash_request,
 };
 
-fn mock_consensus_state_id() -> Vec<u8> {
-    "mock_consensus_state".as_bytes().to_vec()
+fn mock_consensus_state_id() -> ConsensusStateId {
+    *b"mock_cs_id__"
 }
 
 fn setup_mock_client<H: IsmpHost>(host: &H) -> IntermediateState {
@@ -55,11 +57,8 @@ fn setup_mock_client<H: IsmpHost>(host: &H) -> IntermediateState {
 
     host.store_consensus_state(mock_consensus_state_id(), vec![]).unwrap();
     host.store_consensus_state_id(mock_consensus_state_id(), MOCK_CONSENSUS_CLIENT_ID).unwrap();
-    host.store_state_machine_commitment(
-        intermediate_state.height.clone(),
-        intermediate_state.commitment,
-    )
-    .unwrap();
+    host.store_state_machine_commitment(intermediate_state.height, intermediate_state.commitment)
+        .unwrap();
 
     intermediate_state
 }
@@ -95,7 +94,7 @@ pub fn check_challenge_period<H: IsmpHost>(host: &H) -> Result<(), &'static str>
     // Request message handling check
     let request_message = Message::Request(RequestMessage {
         requests: vec![post.clone()],
-        proof: Proof { height: intermediate_state.height.clone(), proof: vec![] },
+        proof: Proof { height: intermediate_state.height, proof: vec![] },
     });
 
     let res = handle_incoming_message(host, request_message);
@@ -105,7 +104,7 @@ pub fn check_challenge_period<H: IsmpHost>(host: &H) -> Result<(), &'static str>
     // Response message handling check
     let response_message = Message::Response(ResponseMessage::Post {
         responses: vec![Response::Post(PostResponse { post, response: vec![] })],
-        proof: Proof { height: intermediate_state.height.clone(), proof: vec![] },
+        proof: Proof { height: intermediate_state.height, proof: vec![] },
     });
 
     let res = handle_incoming_message(host, response_message);
@@ -149,7 +148,7 @@ pub fn frozen_check<H: IsmpHost>(host: &H) -> Result<(), &'static str> {
     host.store_consensus_update_time(mock_consensus_state_id(), previous_update_time).unwrap();
 
     let frozen_height = StateMachineHeight {
-        id: intermediate_state.height.id.clone(),
+        id: intermediate_state.height.id,
         height: intermediate_state.height.height - 1,
     };
     host.freeze_state_machine(frozen_height).unwrap();
@@ -167,7 +166,7 @@ pub fn frozen_check<H: IsmpHost>(host: &H) -> Result<(), &'static str> {
     // Request message handling check
     let request_message = Message::Request(RequestMessage {
         requests: vec![post.clone()],
-        proof: Proof { height: intermediate_state.height.clone(), proof: vec![] },
+        proof: Proof { height: intermediate_state.height, proof: vec![] },
     });
 
     let res = handle_incoming_message(host, request_message);
@@ -177,7 +176,7 @@ pub fn frozen_check<H: IsmpHost>(host: &H) -> Result<(), &'static str> {
     // Response message handling check
     let response_message = Message::Response(ResponseMessage::Post {
         responses: vec![Response::Post(PostResponse { post, response: vec![] })],
-        proof: Proof { height: intermediate_state.height.clone(), proof: vec![] },
+        proof: Proof { height: intermediate_state.height, proof: vec![] },
     });
 
     let res = handle_incoming_message(host, response_message);

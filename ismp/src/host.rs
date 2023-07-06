@@ -17,7 +17,8 @@
 
 use crate::{
     consensus::{
-        ConsensusClient, ConsensusClientId, StateCommitment, StateMachineHeight, StateMachineId,
+        ConsensusClient, ConsensusClientId, ConsensusStateId, StateCommitment, StateMachineHeight,
+        StateMachineId,
     },
     error::Error,
     prelude::Vec,
@@ -48,16 +49,19 @@ pub trait IsmpHost {
     ) -> Result<StateCommitment, Error>;
 
     /// Should return the host timestamp when this consensus client was last updated
-    fn consensus_update_time(&self, consensus_state_id: Vec<u8>) -> Result<Duration, Error>;
+    fn consensus_update_time(
+        &self,
+        consensus_state_id: ConsensusStateId,
+    ) -> Result<Duration, Error>;
 
     /// Should return the consensus client id for this consensus state id
     fn consensus_client_from_state_id(
         &self,
-        consensus_state_id: Vec<u8>,
+        consensus_state_id: ConsensusStateId,
     ) -> Option<ConsensusClientId>;
 
     /// Should return the encoded consensus state for a consensus state id provided
-    fn consensus_state(&self, consensus_state_id: Vec<u8>) -> Result<Vec<u8>, Error>;
+    fn consensus_state(&self, consensus_state_id: ConsensusStateId) -> Result<Vec<u8>, Error>;
 
     /// Should return the current timestamp on the host
     fn timestamp(&self) -> Duration;
@@ -67,7 +71,8 @@ pub trait IsmpHost {
     fn is_state_machine_frozen(&self, machine: StateMachineHeight) -> Result<(), Error>;
 
     /// Checks if a consensus state is frozen at the provided height
-    fn is_consensus_client_frozen(&self, consensus_state_id: Vec<u8>) -> Result<(), Error>;
+    fn is_consensus_client_frozen(&self, consensus_state_id: ConsensusStateId)
+        -> Result<(), Error>;
 
     /// Should return an error if request commitment does not exist in storage
     fn request_commitment(&self, req: H256) -> Result<(), Error>;
@@ -85,21 +90,21 @@ pub trait IsmpHost {
     /// Should return an error if the consensus_state_id already exists
     fn store_consensus_state_id(
         &self,
-        consensus_state_id: Vec<u8>,
+        consensus_state_id: ConsensusStateId,
         client_id: ConsensusClientId,
     ) -> Result<(), Error>;
 
     /// Store an encoded consensus state
     fn store_consensus_state(
         &self,
-        consensus_state_id: Vec<u8>,
+        consensus_state_id: ConsensusStateId,
         consensus_state: Vec<u8>,
     ) -> Result<(), Error>;
 
     /// Store the timestamp when the consensus client was updated
     fn store_consensus_update_time(
         &self,
-        consensus_state_id: Vec<u8>,
+        consensus_state_id: ConsensusStateId,
         timestamp: Duration,
     ) -> Result<(), Error>;
 
@@ -114,7 +119,7 @@ pub trait IsmpHost {
     fn freeze_state_machine(&self, height: StateMachineHeight) -> Result<(), Error>;
 
     /// Freeze a consensus state with the given identifier
-    fn freeze_consensus_client(&self, consensus_state_id: Vec<u8>) -> Result<(), Error>;
+    fn freeze_consensus_client(&self, consensus_state_id: ConsensusStateId) -> Result<(), Error>;
 
     /// Store latest height for a state machine
     fn store_latest_commitment_height(&self, height: StateMachineHeight) -> Result<(), Error>;
@@ -138,18 +143,15 @@ pub trait IsmpHost {
         Self: Sized;
 
     /// Should return the configured delay period for a consensus state
-    fn challenge_period(&self, consensus_state_id: Vec<u8>) -> Option<Duration>;
+    fn challenge_period(&self, consensus_state_id: ConsensusStateId) -> Option<Duration>;
 
     /// Check if the client has expired since the last update
-    fn is_expired(&self, consensus_state_id: Vec<u8>) -> Result<(), Error> {
+    fn is_expired(&self, consensus_state_id: ConsensusStateId) -> Result<(), Error> {
         let host_timestamp = self.timestamp();
-        let unbonding_period =
-            self.unbonding_period(consensus_state_id.clone()).ok_or_else(|| {
-                Error::UnnbondingPeriodNotConfigured {
-                    consensus_state_id: consensus_state_id.clone(),
-                }
-            })?;
-        let last_update = self.consensus_update_time(consensus_state_id.clone())?;
+        let unbonding_period = self
+            .unbonding_period(consensus_state_id)
+            .ok_or(Error::UnnbondingPeriodNotConfigured { consensus_state_id })?;
+        let last_update = self.consensus_update_time(consensus_state_id)?;
         if host_timestamp.saturating_sub(last_update) >= unbonding_period {
             Err(Error::UnbondingPeriodElapsed { consensus_state_id })?
         }
@@ -159,7 +161,7 @@ pub trait IsmpHost {
 
     /// Return the unbonding period (i.e the time it takes for a validator's deposit to be unstaked
     /// from the network)
-    fn unbonding_period(&self, consensus_state_id: Vec<u8>) -> Option<Duration>;
+    fn unbonding_period(&self, consensus_state_id: ConsensusStateId) -> Option<Duration>;
 
     /// Return a handle to the router
     fn ismp_router(&self) -> Box<dyn IsmpRouter>;

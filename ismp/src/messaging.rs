@@ -19,7 +19,9 @@
 // originate from the same chain
 
 use crate::{
-    consensus::{ConsensusClientId, StateCommitment, StateMachineHeight, StateMachineId},
+    consensus::{
+        ConsensusClientId, ConsensusStateId, StateCommitment, StateMachineHeight, StateMachineId,
+    },
     error::Error,
     router::{Post, Request, Response},
 };
@@ -33,7 +35,7 @@ pub struct ConsensusMessage {
     /// Scale Encoded Consensus Proof
     pub consensus_proof: Vec<u8>,
     /// The consensus state Id
-    pub consensus_state_id: Vec<u8>,
+    pub consensus_state_id: ConsensusStateId,
 }
 
 /// A fraud proof message is used to report byzantine misbehaviour in a consensus system.
@@ -44,7 +46,7 @@ pub struct FraudProofMessage {
     /// The second consensus Proof
     pub proof_2: Vec<u8>,
     /// The consensus state Id
-    pub consensus_state_id: Vec<u8>,
+    pub consensus_state_id: ConsensusStateId,
 }
 
 /// Identifies a state commitment at a given height
@@ -64,7 +66,7 @@ pub struct CreateConsensusState {
     /// Consensus client id
     pub consensus_client_id: ConsensusClientId,
     /// The consensus state Id
-    pub consensus_state_id: Vec<u8>,
+    pub consensus_state_id: ConsensusStateId,
     /// State machine commitments
     pub state_machine_commitments: Vec<(StateMachineId, StateCommitmentHeight)>,
 }

@@ -30,9 +30,9 @@ pub fn handle<H>(host: &H, msg: RequestMessage) -> Result<MessageResult, Error>
 where
     H: IsmpHost,
 {
-    let state_machine = validate_state_machine(host, msg.proof.height.clone())?;
+    let state_machine = validate_state_machine(host, msg.proof.height)?;
     // Verify membership proof
-    let state = host.state_machine_commitment(msg.proof.height.clone())?;
+    let state = host.state_machine_commitment(msg.proof.height)?;
 
     state_machine.verify_membership(
         host,

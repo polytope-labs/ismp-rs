@@ -27,6 +27,8 @@ use codec::{Decode, Encode};
 use core::time::Duration;
 use primitive_types::H256;
 
+/// An identifier for a consensus state
+pub type ConsensusStateId = [u8; 12];
 /// Consensus client Ids
 pub type ConsensusClientId = [u8; 4];
 
@@ -52,7 +54,7 @@ impl StateCommitment {
 }
 
 /// We define the intermediate state as the commitment to the global state trie at a given height
-#[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Hash, Eq)]
+#[derive(Debug, Clone, Copy, Encode, Decode, scale_info::TypeInfo, PartialEq, Hash, Eq)]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct IntermediateState {
     /// The state machine height holds the state mahine identifier and a block height
@@ -64,19 +66,19 @@ pub struct IntermediateState {
 /// Since consensus systems may come to conensus about the state of multiple state machines, we
 /// identify each state machine individually.
 #[derive(
-    Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq, Hash, Ord, PartialOrd,
+    Debug, Clone, Copy, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq, Hash, Ord, PartialOrd,
 )]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct StateMachineId {
     /// The state machine identifier
     pub state_id: StateMachine,
     /// It's consensus state identifier
-    pub consensus_state_id: Vec<u8>,
+    pub consensus_state_id: ConsensusStateId,
 }
 
 /// Identifies a state machine at a given height
 #[derive(
-    Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq, Hash, Ord, PartialOrd,
+    Debug, Clone, Copy, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq, Hash, Ord, PartialOrd,
 )]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub struct StateMachineHeight {
@@ -93,7 +95,7 @@ pub trait ConsensusClient {
     fn verify_consensus(
         &self,
         host: &dyn IsmpHost,
-        consensus_state_id: Vec<u8>,
+        consensus_state_id: ConsensusStateId,
         trusted_consensus_state: Vec<u8>,
         proof: Vec<u8>,
     ) -> Result<(Vec<u8>, BTreeMap<StateMachine, StateCommitmentHeight>), Error>;
