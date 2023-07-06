@@ -132,7 +132,7 @@ impl IsmpHost for Host {
             .ok_or_else(|| Error::ImplementationSpecific("Consensus update time not found".into()))
     }
 
-    fn consensus_client_from_state_id(
+    fn consensus_client_id(
         &self,
         consensus_state_id: ConsensusStateId,
     ) -> Option<ConsensusClientId> {

@@ -29,7 +29,7 @@ pub fn update_client<H>(host: &H, msg: ConsensusMessage) -> Result<MessageResult
 where
     H: IsmpHost,
 {
-    let consensus_client_id = host.consensus_client_from_state_id(msg.consensus_state_id).ok_or(
+    let consensus_client_id = host.consensus_client_id(msg.consensus_state_id).ok_or(
         Error::ConsensusStateIdNotRecognized { consensus_state_id: msg.consensus_state_id },
     )?;
     let consensus_client = host.consensus_client(consensus_client_id)?;
@@ -110,11 +110,6 @@ where
     // check that we have an implementation of this client
     host.consensus_client(message.consensus_client_id)?;
 
-    if host.consensus_client_from_state_id(message.consensus_state_id).is_some() {
-        return Err(Error::DuplicateConsensusStateId {
-            consensus_state_id: message.consensus_state_id,
-        })
-    }
     // Store the initial state for the consensus client
     host.store_consensus_state(message.consensus_state_id, message.consensus_state)?;
 
@@ -141,7 +136,7 @@ where
     H: IsmpHost,
 {
     let consensus_client_id = host
-        .consensus_client_from_state_id(msg.consensus_state_id)
+        .consensus_client_id(msg.consensus_state_id)
         .ok_or_else(|| Error::ImplementationSpecific("Unknown Consensus State Id".to_string()))?;
     let consensus_client = host.consensus_client(consensus_client_id)?;
     let trusted_state = host.consensus_state(msg.consensus_state_id)?;

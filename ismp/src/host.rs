@@ -54,8 +54,8 @@ pub trait IsmpHost {
         consensus_state_id: ConsensusStateId,
     ) -> Result<Duration, Error>;
 
-    /// Should return the consensus client id for this consensus state id
-    fn consensus_client_from_state_id(
+    /// Should return the registered consensus client id for this consensus state id
+    fn consensus_client_id(
         &self,
         consensus_state_id: ConsensusStateId,
     ) -> Option<ConsensusClientId>;
@@ -167,45 +167,54 @@ pub trait IsmpHost {
     fn ismp_router(&self) -> Box<dyn IsmpRouter>;
 }
 
+/// Currently supported ethereum state machines.
+#[derive(
+    Clone, Debug, Copy, Encode, Decode, PartialOrd, Ord, PartialEq, Eq, Hash, scale_info::TypeInfo,
+)]
+#[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
+pub enum Ethereum {
+    /// Ethereum Execution layer
+    ExecutionLayer,
+    /// The optimism state machine
+    Optimism,
+    /// The Arbitrum state machine
+    Arbitrum,
+    /// The Base state machine
+    Base,
+}
+
 /// Currently supported state machines.
 #[derive(
     Clone, Debug, Copy, Encode, Decode, PartialOrd, Ord, PartialEq, Eq, Hash, scale_info::TypeInfo,
 )]
 #[cfg_attr(feature = "std", derive(serde::Deserialize, serde::Serialize))]
 pub enum StateMachine {
-    /// Ethereum Execution layer
+    /// Ethereum state machines
     #[codec(index = 0)]
-    Ethereum,
-    /// Arbitrum Optimistic L2
-    #[codec(index = 1)]
-    Arbitrum,
-    /// Optimism Optimistic L2
-    #[codec(index = 2)]
-    Optimism,
-    /// Base Optimistic L2
-    #[codec(index = 3)]
-    Base,
+    Ethereum(Ethereum),
     /// Polkadot parachains
-    #[codec(index = 4)]
+    #[codec(index = 1)]
     Polkadot(u32),
     /// Kusama parachains
-    #[codec(index = 5)]
+    #[codec(index = 2)]
     Kusama(u32),
-    /// State machines running on grandpa consensus client
-    #[codec(index = 5)]
-    Grandpa([u8; 8]),
+    /// We identify
+    #[codec(index = 3)]
+    Grandpa(ConsensusStateId),
     /// State machines chains running on beefy consensus client
-    #[codec(index = 6)]
-    Beefy([u8; 8]),
+    #[codec(index = 4)]
+    Beefy(ConsensusStateId),
 }
 
 impl ToString for StateMachine {
     fn to_string(&self) -> String {
         match self {
-            StateMachine::Ethereum => "ETHEREUM".to_string(),
-            StateMachine::Arbitrum => "ARBITRUM".to_string(),
-            StateMachine::Optimism => "OPTIMISM".to_string(),
-            StateMachine::Base => "BASE".to_string(),
+            StateMachine::Ethereum(ethereum) => match ethereum {
+                Ethereum::ExecutionLayer => "ETHEREUM".to_string(),
+                Ethereum::Arbitrum => "ARBITRUM".to_string(),
+                Ethereum::Optimism => "OPTIMISM".to_string(),
+                Ethereum::Base => "BASE".to_string(),
+            },
             StateMachine::Polkadot(id) => format!("POLKADOT-{id}"),
             StateMachine::Kusama(id) => format!("KUSAMA-{id}"),
             StateMachine::Grandpa(id) => format!(
@@ -225,10 +234,10 @@ impl FromStr for StateMachine {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = match s {
-            "ETHEREUM" => StateMachine::Ethereum,
-            "ARBITRUM" => StateMachine::Arbitrum,
-            "OPTIMISM" => StateMachine::Optimism,
-            "BASE" => StateMachine::Base,
+            "ETHEREUM" => StateMachine::Ethereum(Ethereum::ExecutionLayer),
+            "ARBITRUM" => StateMachine::Ethereum(Ethereum::Arbitrum),
+            "OPTIMISM" => StateMachine::Ethereum(Ethereum::Optimism),
+            "BASE" => StateMachine::Ethereum(Ethereum::Base),
             name if name.starts_with("POLKADOT-") => {
                 let id = name
                     .split('-')
@@ -276,8 +285,8 @@ mod tests {
 
     #[test]
     fn state_machine_conversions() {
-        let grandpa = StateMachine::Grandpa(*b"standard");
-        let beefy = StateMachine::Beefy(*b"standard");
+        let grandpa = StateMachine::Grandpa(*b"hybr");
+        let beefy = StateMachine::Beefy(*b"hybr");
 
         let grandpa_string = grandpa.to_string();
         let beefy_string = beefy.to_string();

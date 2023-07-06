@@ -27,9 +27,10 @@ use codec::{Decode, Encode};
 use core::time::Duration;
 use primitive_types::H256;
 
-/// An identifier for a consensus state
-pub type ConsensusStateId = [u8; 12];
-/// Consensus client Ids
+/// An identifier for a consensus states
+pub type ConsensusStateId = [u8; 4];
+
+/// An identifier for Consensus client implementations
 pub type ConsensusClientId = [u8; 4];
 
 /// The state commitment represents a commitment to the state machine's state (trie) at a given

@@ -34,16 +34,17 @@ use ismp::{
     },
     util::hash_request,
 };
+use ismp::host::Ethereum;
 
 fn mock_consensus_state_id() -> ConsensusStateId {
-    *b"mock_cs_id__"
+    *b"mock"
 }
 
 fn setup_mock_client<H: IsmpHost>(host: &H) -> IntermediateState {
     let intermediate_state = IntermediateState {
         height: StateMachineHeight {
             id: StateMachineId {
-                state_id: StateMachine::Ethereum,
+                state_id: StateMachine::Ethereum(Ethereum::ExecutionLayer),
                 consensus_state_id: mock_consensus_state_id(),
             },
             height: 1,

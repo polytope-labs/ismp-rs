@@ -106,11 +106,11 @@ where
     H: IsmpHost,
 {
     // Ensure consensus client is not frozen
-    let consensus_client_id = host
-        .consensus_client_from_state_id(proof_height.id.consensus_state_id)
-        .ok_or(Error::ConsensusStateIdNotRecognized {
+    let consensus_client_id = host.consensus_client_id(proof_height.id.consensus_state_id).ok_or(
+        Error::ConsensusStateIdNotRecognized {
             consensus_state_id: proof_height.id.consensus_state_id,
-        })?;
+        },
+    )?;
     let consensus_client = host.consensus_client(consensus_client_id)?;
     // Ensure client is not frozen
     host.is_consensus_client_frozen(proof_height.id.consensus_state_id)?;
