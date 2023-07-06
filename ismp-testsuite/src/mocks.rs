@@ -207,6 +207,10 @@ impl IsmpHost for Host {
         Ok(())
     }
 
+    fn store_unbonding_period(&self, _consensus_state_id: ConsensusStateId, _period: Duration) -> Result<(), Error> {
+        Ok(())
+    }
+
     fn store_consensus_update_time(
         &self,
         id: ConsensusStateId,
