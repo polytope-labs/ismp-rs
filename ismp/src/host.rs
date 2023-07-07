@@ -217,9 +217,9 @@ impl ToString for StateMachine {
     fn to_string(&self) -> String {
         match self {
             StateMachine::Ethereum(ethereum) => match ethereum {
-                Ethereum::ExecutionLayer => "ETHEREUM".to_string(),
-                Ethereum::Arbitrum => "ARBITRUM".to_string(),
-                Ethereum::Optimism => "OPTIMISM".to_string(),
+                Ethereum::ExecutionLayer => "ETHE".to_string(),
+                Ethereum::Arbitrum => "ARBI".to_string(),
+                Ethereum::Optimism => "OPTI".to_string(),
                 Ethereum::Base => "BASE".to_string(),
             },
             StateMachine::Polkadot(id) => format!("POLKADOT-{id}"),
@@ -235,9 +235,9 @@ impl FromStr for StateMachine {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = match s {
-            "ETHEREUM" => StateMachine::Ethereum(Ethereum::ExecutionLayer),
-            "ARBITRUM" => StateMachine::Ethereum(Ethereum::Arbitrum),
-            "OPTIMISM" => StateMachine::Ethereum(Ethereum::Optimism),
+            "ETHE" => StateMachine::Ethereum(Ethereum::ExecutionLayer),
+            "ARBI" => StateMachine::Ethereum(Ethereum::Arbitrum),
+            "OPTI" => StateMachine::Ethereum(Ethereum::Optimism),
             "BASE" => StateMachine::Ethereum(Ethereum::Base),
             name if name.starts_with("POLKADOT-") => {
                 let id = name
