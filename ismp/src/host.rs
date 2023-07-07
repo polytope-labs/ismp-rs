@@ -224,14 +224,8 @@ impl ToString for StateMachine {
             },
             StateMachine::Polkadot(id) => format!("POLKADOT-{id}"),
             StateMachine::Kusama(id) => format!("KUSAMA-{id}"),
-            StateMachine::Grandpa(id) => format!(
-                "GRANDPA-{}",
-                u32::from_be_bytes(*id)
-            ),
-            StateMachine::Beefy(id) => format!(
-                "BEEFY-{}",
-                u32::from_be_bytes(*id)
-            ),
+            StateMachine::Grandpa(id) => format!("GRANDPA-{}", u32::from_be_bytes(*id)),
+            StateMachine::Beefy(id) => format!("BEEFY-{}", u32::from_be_bytes(*id)),
         }
     }
 }
