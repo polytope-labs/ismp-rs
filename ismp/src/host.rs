@@ -205,10 +205,10 @@ pub enum StateMachine {
     /// Kusama parachains
     #[codec(index = 2)]
     Kusama(u32),
-    /// We identify
+    /// We identify standalone state machines by their consensus state
     #[codec(index = 3)]
     Grandpa(ConsensusStateId),
-    /// State machines chains running on beefy consensus client
+    /// State machines chains running on beefy consensus state
     #[codec(index = 4)]
     Beefy(ConsensusStateId),
 }
@@ -226,11 +226,11 @@ impl ToString for StateMachine {
             StateMachine::Kusama(id) => format!("KUSAMA-{id}"),
             StateMachine::Grandpa(id) => format!(
                 "GRANDPA-{}",
-                serde_json::to_string(id).expect("Array to string is infallible")
+                u32::from_be_bytes(*id)
             ),
             StateMachine::Beefy(id) => format!(
                 "BEEFY-{}",
-                serde_json::to_string(id).expect("Array to string is infallible")
+                u32::from_be_bytes(*id)
             ),
         }
     }
@@ -265,7 +265,7 @@ impl FromStr for StateMachine {
                 let id = name
                     .split('-')
                     .last()
-                    .and_then(|id| serde_json::from_str(id).ok())
+                    .and_then(|id| u32::from_str(id).ok().map(u32::to_be_bytes))
                     .ok_or_else(|| format!("invalid state machine: {name}"))?;
                 StateMachine::Grandpa(id)
             }
@@ -273,7 +273,7 @@ impl FromStr for StateMachine {
                 let id = name
                     .split('-')
                     .last()
-                    .and_then(|id| serde_json::from_str(id).ok())
+                    .and_then(|id| u32::from_str(id).ok().map(u32::to_be_bytes))
                     .ok_or_else(|| format!("invalid state machine: {name}"))?;
                 StateMachine::Beefy(id)
             }
@@ -297,6 +297,9 @@ mod tests {
 
         let grandpa_string = grandpa.to_string();
         let beefy_string = beefy.to_string();
+
+        dbg!(&grandpa_string);
+        dbg!(&beefy_string);
 
         assert_eq!(grandpa, StateMachine::from_str(&grandpa_string).unwrap());
         assert_eq!(beefy, StateMachine::from_str(&beefy_string).unwrap());
