@@ -283,6 +283,10 @@ impl IsmpHost for Host {
         Some(Duration::from_secs(60 * 60))
     }
 
+    fn store_challenge_period(&self, _consensus_state_id: ConsensusStateId, _period: u64) -> Result<(), Error> {
+        todo!()
+    }
+
     fn unbonding_period(&self, _consensus_state_id: ConsensusStateId) -> Option<Duration> {
         Some(Duration::from_secs(60 * 60 * 60))
     }

@@ -152,6 +152,9 @@ pub trait IsmpHost {
     /// Should return the configured delay period for a consensus state
     fn challenge_period(&self, consensus_state_id: ConsensusStateId) -> Option<Duration>;
 
+    /// Set the challenge period in seconds for a consensus state.
+    fn store_challenge_period(&self, consensus_state_id: ConsensusStateId, period: u64) -> Result<(), Error>;
+
     /// Check if the client has expired since the last update
     fn is_expired(&self, consensus_state_id: ConsensusStateId) -> Result<(), Error> {
         let host_timestamp = self.timestamp();
