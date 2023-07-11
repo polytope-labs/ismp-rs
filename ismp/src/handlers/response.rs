@@ -64,10 +64,11 @@ where
                     let cb = router.module_for_id(response.destination_module())?;
                     let res = cb
                         .on_response(response.clone())
-                        .map(|_| DispatchSuccess {
+                        .map(|gas| DispatchSuccess {
                             dest_chain: response.dest_chain(),
                             source_chain: response.source_chain(),
                             nonce: response.nonce(),
+                            gas,
                         })
                         .map_err(|e| DispatchError {
                             msg: format!("{e:?}"),
@@ -109,10 +110,11 @@ where
                             get: request.get_request()?,
                             values,
                         }))
-                        .map(|_| DispatchSuccess {
+                        .map(|gas| DispatchSuccess {
                             dest_chain: request.dest_chain(),
                             source_chain: request.source_chain(),
                             nonce: request.nonce(),
+                            gas,
                         })
                         .map_err(|e| DispatchError {
                             msg: format!("{e:?}"),

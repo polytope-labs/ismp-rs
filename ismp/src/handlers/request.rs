@@ -54,10 +54,11 @@ where
             let cb = router.module_for_id(request.to.clone())?;
             let res = cb
                 .on_accept(request.clone())
-                .map(|_| DispatchSuccess {
+                .map(|gas| DispatchSuccess {
                     dest_chain: request.dest,
                     source_chain: request.source,
                     nonce: request.nonce,
+                    gas,
                 })
                 .map_err(|e| DispatchError {
                     msg: format!("{e:?}"),

@@ -65,10 +65,11 @@ where
                     let cb = router.module_for_id(request.source_module())?;
                     let res = cb
                         .on_timeout(request.clone())
-                        .map(|_| DispatchSuccess {
+                        .map(|gas| DispatchSuccess {
                             dest_chain: request.dest_chain(),
                             source_chain: request.source_chain(),
                             nonce: request.nonce(),
+                            gas,
                         })
                         .map_err(|e| DispatchError {
                             msg: format!("{e:?}"),
@@ -104,10 +105,11 @@ where
                     let cb = router.module_for_id(request.source_module())?;
                     let res = cb
                         .on_timeout(request.clone())
-                        .map(|_| DispatchSuccess {
+                        .map(|gas| DispatchSuccess {
                             dest_chain: request.dest_chain(),
                             source_chain: request.source_chain(),
                             nonce: request.nonce(),
+                            gas,
                         })
                         .map_err(|e| DispatchError {
                             msg: format!("{e:?}"),

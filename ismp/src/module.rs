@@ -16,6 +16,7 @@
 //! ISMPModule definition
 
 use crate::{
+    contracts::Gas,
     error::Error,
     host::StateMachine,
     router::{Post as PostRequest, Request, Response},
@@ -31,6 +32,8 @@ pub struct DispatchSuccess {
     pub source_chain: StateMachine,
     /// Request nonce
     pub nonce: u64,
+    /// Gas used by contract executor;
+    pub gas: Gas,
 }
 
 /// The result of unsuccessfully dispatching a request or response
@@ -63,20 +66,4 @@ pub trait IsmpModule {
     /// Called by the message handler on a module, to notify module of requests that were previously
     /// sent but have now timed-out
     fn on_timeout(&self, request: Request) -> Result<Gas, Error>;
-}
-
-pub struct Gas {
-    /// Gas consumed when executing the contract call
-    pub gas_used: Option<u64>,
-    /// Gas limit passed to the contract executor
-    pub gas_limit: Option<u64>
-}
-
-impl From<()> for Gas {
-    fn from(_: ()) -> Self {
-        Self {
-            gas_used: None,
-            gas_limit: None
-        }
-    }
 }

@@ -3,6 +3,7 @@ use ismp::{
         ConsensusClient, ConsensusClientId, ConsensusStateId, StateCommitment, StateMachineClient,
         StateMachineHeight, StateMachineId,
     },
+    contracts::Gas,
     error::Error,
     host::{IsmpHost, StateMachine},
     messaging::{Proof, StateCommitmentHeight},
@@ -21,7 +22,6 @@ use std::{
     sync::Arc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use ismp::module::Gas;
 
 #[derive(Default)]
 pub struct MockClient;
