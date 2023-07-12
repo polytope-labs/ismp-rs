@@ -61,16 +61,19 @@ pub type DispatchResult = Result<DispatchSuccess, DispatchError>;
 pub trait IsmpModule {
     /// Called by the message handler on a module, to notify module of a new POST request
     /// the module may choose to respond immediately, or in a later block
-    /// If the module is a contract, it returns the gas consumed while executing
+    /// If the receiving module is a contract then the `Gas` value should contain the details about
+    /// the gas consumed for executing the callback
     fn on_accept(&self, request: PostRequest) -> Result<Gas, Error>;
 
     /// Called by the message handler on a module, to notify module of a response to a previously
     /// sent out request
-    /// If the module is a contract, it returns the gas consumed while executing
+    /// If the receiving module is a contract then the `Gas` value should contain the details about
+    /// the gas consumed for executing the callback
     fn on_response(&self, response: Response) -> Result<Gas, Error>;
 
     /// Called by the message handler on a module, to notify module of requests that were previously
     /// sent but have now timed-out
-    /// If the module is a contract, it returns the gas consumed while executing
+    /// If the receiving module is a contract then the `Gas` value should contain the details about
+    /// the gas consumed for executing the callback
     fn on_timeout(&self, request: Request) -> Result<Gas, Error>;
 }
