@@ -65,16 +65,18 @@ where
                     let res = cb
                         .on_response(response.clone())
                         .map(|gas| DispatchSuccess {
-                            dest_chain: response.dest_chain(),
-                            source_chain: response.source_chain(),
+                            dest: response.dest_chain(),
+                            source: response.source_chain(),
                             nonce: response.nonce(),
                             gas,
+                            module_id: response.destination_module(),
                         })
                         .map_err(|e| DispatchError {
                             msg: format!("{e:?}"),
                             nonce: response.nonce(),
-                            source_chain: response.source_chain(),
-                            dest_chain: response.dest_chain(),
+                            source: response.source_chain(),
+                            dest: response.dest_chain(),
+                            module_id: response.destination_module(),
                         });
                     host.store_response_receipt(&response.request())?;
                     Ok(res)
@@ -111,16 +113,18 @@ where
                             values,
                         }))
                         .map(|gas| DispatchSuccess {
-                            dest_chain: request.dest_chain(),
-                            source_chain: request.source_chain(),
+                            dest: request.dest_chain(),
+                            source: request.source_chain(),
                             nonce: request.nonce(),
                             gas,
+                            module_id: request.source_module(),
                         })
                         .map_err(|e| DispatchError {
                             msg: format!("{e:?}"),
                             nonce: request.nonce(),
-                            source_chain: request.source_chain(),
-                            dest_chain: request.dest_chain(),
+                            source: request.source_chain(),
+                            dest: request.dest_chain(),
+                            module_id: request.source_module(),
                         });
                     host.store_response_receipt(&request)?;
                     Ok(res)

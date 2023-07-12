@@ -66,16 +66,18 @@ where
                     let res = cb
                         .on_timeout(request.clone())
                         .map(|gas| DispatchSuccess {
-                            dest_chain: request.dest_chain(),
-                            source_chain: request.source_chain(),
+                            dest: request.dest_chain(),
+                            source: request.source_chain(),
                             nonce: request.nonce(),
                             gas,
+                            module_id: request.source_module(),
                         })
                         .map_err(|e| DispatchError {
                             msg: format!("{e:?}"),
                             nonce: request.nonce(),
-                            source_chain: request.source_chain(),
-                            dest_chain: request.dest_chain(),
+                            source: request.source_chain(),
+                            dest: request.dest_chain(),
+                            module_id: request.source_module(),
                         });
                     host.delete_request_commitment(&request)?;
                     Ok(res)
@@ -106,16 +108,18 @@ where
                     let res = cb
                         .on_timeout(request.clone())
                         .map(|gas| DispatchSuccess {
-                            dest_chain: request.dest_chain(),
-                            source_chain: request.source_chain(),
+                            dest: request.dest_chain(),
+                            source: request.source_chain(),
                             nonce: request.nonce(),
                             gas,
+                            module_id: request.source_module(),
                         })
                         .map_err(|e| DispatchError {
                             msg: format!("{e:?}"),
                             nonce: request.nonce(),
-                            source_chain: request.source_chain(),
-                            dest_chain: request.dest_chain(),
+                            source: request.source_chain(),
+                            dest: request.dest_chain(),
+                            module_id: request.source_module(),
                         });
                     host.delete_request_commitment(&request)?;
                     Ok(res)

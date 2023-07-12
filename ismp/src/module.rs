@@ -21,19 +21,21 @@ use crate::{
     host::StateMachine,
     router::{Post as PostRequest, Request, Response},
 };
-use alloc::string::String;
+use alloc::{string::String, vec::Vec};
 
 /// The result of successfully dispatching a request or response
 #[derive(Debug, PartialEq, Eq)]
 pub struct DispatchSuccess {
     /// Destination chain for request or response
-    pub dest_chain: StateMachine,
+    pub dest: StateMachine,
     /// Source chain for request or response
-    pub source_chain: StateMachine,
+    pub source: StateMachine,
     /// Request nonce
     pub nonce: u64,
     /// Gas used by contract executor;
     pub gas: Gas,
+    /// Destination module_id
+    pub module_id: Vec<u8>,
 }
 
 /// The result of unsuccessfully dispatching a request or response
@@ -44,9 +46,11 @@ pub struct DispatchError {
     /// Request nonce
     pub nonce: u64,
     /// Source chain for request or response
-    pub source_chain: StateMachine,
+    pub source: StateMachine,
     /// Destination chain for request or response
-    pub dest_chain: StateMachine,
+    pub dest: StateMachine,
+    /// Destination module_id
+    pub module_id: Vec<u8>,
 }
 
 /// A type alias for dispatch results

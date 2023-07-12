@@ -55,16 +55,18 @@ where
             let res = cb
                 .on_accept(request.clone())
                 .map(|gas| DispatchSuccess {
-                    dest_chain: request.dest,
-                    source_chain: request.source,
+                    dest: request.dest,
+                    source: request.source,
                     nonce: request.nonce,
                     gas,
+                    module_id: request.to.clone(),
                 })
                 .map_err(|e| DispatchError {
                     msg: format!("{e:?}"),
                     nonce: request.nonce,
-                    source_chain: request.source,
-                    dest_chain: request.dest,
+                    source: request.source,
+                    dest: request.dest,
+                    module_id: request.to.clone(),
                 });
             host.store_request_receipt(&Request::Post(request))?;
             Ok(res)
