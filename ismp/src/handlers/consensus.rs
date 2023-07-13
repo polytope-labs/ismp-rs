@@ -63,31 +63,37 @@ where
     let timestamp = host.timestamp();
     host.store_consensus_update_time(msg.consensus_state_id, timestamp)?;
     let mut state_updates = BTreeSet::new();
-    for (id, commitment_height) in intermediate_states {
+    for (id, mut commitment_heights) in intermediate_states {
+        commitment_heights.sort_unstable_by(|a, b| a.height.cmp(&b.height));
         let id = StateMachineId { state_id: id, consensus_state_id: msg.consensus_state_id };
-        let state_height = StateMachineHeight { id, height: commitment_height.height };
-        // If a state machine is frozen, we skip it
-        if host.is_state_machine_frozen(state_height).is_err() {
-            continue
-        }
-
         let previous_latest_height = host.latest_commitment_height(id)?;
+        let mut current_height = None;
+        for commitment_height in commitment_heights {
+            let state_height = StateMachineHeight { id, height: commitment_height.height };
+            // If a state machine is frozen, we skip it
+            if host.is_state_machine_frozen(state_height).is_err() {
+                continue
+            }
 
-        // Only allow heights greater than latest height
-        if previous_latest_height > commitment_height.height {
-            continue
+            // Only allow heights greater than latest height
+            if previous_latest_height > commitment_height.height {
+                continue
+            }
+
+            // Skip duplicate states
+            if host.state_machine_commitment(state_height).is_ok() {
+                continue
+            }
+
+            host.store_state_machine_commitment(state_height, commitment_height.commitment)?;
+            current_height = Some(state_height);
         }
 
-        // Skip duplicate states
-        if host.state_machine_commitment(state_height).is_ok() {
-            continue
+        if let Some(state_height) = current_height {
+            state_updates
+                .insert((StateMachineHeight { id, height: previous_latest_height }, state_height));
+            host.store_latest_commitment_height(state_height)?;
         }
-
-        host.store_state_machine_commitment(state_height, commitment_height.commitment)?;
-
-        state_updates
-            .insert((StateMachineHeight { id, height: previous_latest_height }, state_height));
-        host.store_latest_commitment_height(state_height)?;
     }
 
     let result = ConsensusUpdateResult {

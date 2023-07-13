@@ -99,7 +99,7 @@ pub trait ConsensusClient {
         consensus_state_id: ConsensusStateId,
         trusted_consensus_state: Vec<u8>,
         proof: Vec<u8>,
-    ) -> Result<(Vec<u8>, BTreeMap<StateMachine, StateCommitmentHeight>), Error>;
+    ) -> Result<(Vec<u8>, BTreeMap<StateMachine, Vec<StateCommitmentHeight>>), Error>;
 
     /// Given two distinct consensus proofs, verify that they're both valid and represent
     /// conflicting views of the network. returns Ok(()) if they're both valid.

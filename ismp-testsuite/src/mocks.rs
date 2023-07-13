@@ -40,7 +40,7 @@ impl ConsensusClient for MockClient {
         _consensus_state_id: ConsensusStateId,
         _trusted_consensus_state: Vec<u8>,
         _proof: Vec<u8>,
-    ) -> Result<(Vec<u8>, BTreeMap<StateMachine, StateCommitmentHeight>), Error> {
+    ) -> Result<(Vec<u8>, BTreeMap<StateMachine, Vec<StateCommitmentHeight>>), Error> {
         Ok(Default::default())
     }
 
