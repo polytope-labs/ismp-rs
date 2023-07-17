@@ -87,8 +87,7 @@ where
             host.store_state_machine_commitment(state_height, commitment_height.commitment)?;
         }
 
-        let latest_height = commitment_heights.last();
-        if let Some(latest_height) = latest_height {
+        if let Some(latest_height) = commitment_heights.last() {
             let latest_height = StateMachineHeight { id, height: latest_height.height };
             state_updates
                 .insert((StateMachineHeight { id, height: previous_latest_height }, latest_height));
