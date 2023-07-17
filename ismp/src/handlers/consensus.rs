@@ -67,8 +67,7 @@ where
         commitment_heights.sort_unstable_by(|a, b| a.height.cmp(&b.height));
         let id = StateMachineId { state_id: id, consensus_state_id: msg.consensus_state_id };
         let previous_latest_height = host.latest_commitment_height(id)?;
-        let mut current_height = None;
-        for commitment_height in commitment_heights {
+        for commitment_height in commitment_heights.iter() {
             let state_height = StateMachineHeight { id, height: commitment_height.height };
             // If a state machine is frozen, we skip it
             if host.is_state_machine_frozen(state_height).is_err() {
@@ -86,13 +85,14 @@ where
             }
 
             host.store_state_machine_commitment(state_height, commitment_height.commitment)?;
-            current_height = Some(state_height);
         }
 
-        if let Some(state_height) = current_height {
+        let latest_height = commitment_heights.last();
+        if let Some(latest_height) = latest_height {
+            let latest_height = StateMachineHeight { id, height: latest_height.height };
             state_updates
-                .insert((StateMachineHeight { id, height: previous_latest_height }, state_height));
-            host.store_latest_commitment_height(state_height)?;
+                .insert((StateMachineHeight { id, height: previous_latest_height }, latest_height));
+            host.store_latest_commitment_height(latest_height)?;
         }
     }
 
