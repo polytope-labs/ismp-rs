@@ -64,19 +64,16 @@ where
                     let cb = router.module_for_id(response.destination_module())?;
                     let res = cb
                         .on_response(response.clone())
-                        .map(|gas| DispatchSuccess {
-                            dest: response.dest_chain(),
-                            source: response.source_chain(),
+                        .map(|_| DispatchSuccess {
+                            dest_chain: response.dest_chain(),
+                            source_chain: response.source_chain(),
                             nonce: response.nonce(),
-                            gas,
-                            module_id: response.destination_module(),
                         })
                         .map_err(|e| DispatchError {
                             msg: format!("{e:?}"),
                             nonce: response.nonce(),
-                            source: response.source_chain(),
-                            dest: response.dest_chain(),
-                            module_id: response.destination_module(),
+                            source_chain: response.source_chain(),
+                            dest_chain: response.dest_chain(),
                         });
                     host.store_response_receipt(&response.request())?;
                     Ok(res)
@@ -112,19 +109,16 @@ where
                             get: request.get_request()?,
                             values,
                         }))
-                        .map(|gas| DispatchSuccess {
-                            dest: request.dest_chain(),
-                            source: request.source_chain(),
+                        .map(|_| DispatchSuccess {
+                            dest_chain: request.dest_chain(),
+                            source_chain: request.source_chain(),
                             nonce: request.nonce(),
-                            gas,
-                            module_id: request.source_module(),
                         })
                         .map_err(|e| DispatchError {
                             msg: format!("{e:?}"),
                             nonce: request.nonce(),
-                            source: request.source_chain(),
-                            dest: request.dest_chain(),
-                            module_id: request.source_module(),
+                            source_chain: request.source_chain(),
+                            dest_chain: request.dest_chain(),
                         });
                     host.store_response_receipt(&request)?;
                     Ok(res)

@@ -16,26 +16,21 @@
 //! ISMPModule definition
 
 use crate::{
-    contracts::Gas,
     error::Error,
     host::StateMachine,
     router::{Post as PostRequest, Request, Response},
 };
-use alloc::{string::String, vec::Vec};
+use alloc::string::String;
 
 /// The result of successfully dispatching a request or response
 #[derive(Debug, PartialEq, Eq)]
 pub struct DispatchSuccess {
     /// Destination chain for request or response
-    pub dest: StateMachine,
+    pub dest_chain: StateMachine,
     /// Source chain for request or response
-    pub source: StateMachine,
+    pub source_chain: StateMachine,
     /// Request nonce
     pub nonce: u64,
-    /// Gas used by contract executor;
-    pub gas: Gas,
-    /// Destination module_id
-    pub module_id: Vec<u8>,
 }
 
 /// The result of unsuccessfully dispatching a request or response
@@ -46,11 +41,9 @@ pub struct DispatchError {
     /// Request nonce
     pub nonce: u64,
     /// Source chain for request or response
-    pub source: StateMachine,
+    pub source_chain: StateMachine,
     /// Destination chain for request or response
-    pub dest: StateMachine,
-    /// Destination module_id
-    pub module_id: Vec<u8>,
+    pub dest_chain: StateMachine,
 }
 
 /// A type alias for dispatch results
@@ -61,19 +54,13 @@ pub type DispatchResult = Result<DispatchSuccess, DispatchError>;
 pub trait IsmpModule {
     /// Called by the message handler on a module, to notify module of a new POST request
     /// the module may choose to respond immediately, or in a later block
-    /// If the receiving module is a contract then the `Gas` value should contain the details about
-    /// the gas consumed for executing the callback
-    fn on_accept(&self, request: PostRequest) -> Result<Gas, Error>;
+    fn on_accept(&self, request: PostRequest) -> Result<(), Error>;
 
     /// Called by the message handler on a module, to notify module of a response to a previously
     /// sent out request
-    /// If the receiving module is a contract then the `Gas` value should contain the details about
-    /// the gas consumed for executing the callback
-    fn on_response(&self, response: Response) -> Result<Gas, Error>;
+    fn on_response(&self, response: Response) -> Result<(), Error>;
 
     /// Called by the message handler on a module, to notify module of requests that were previously
     /// sent but have now timed-out
-    /// If the receiving module is a contract then the `Gas` value should contain the details about
-    /// the gas consumed for executing the callback
-    fn on_timeout(&self, request: Request) -> Result<Gas, Error>;
+    fn on_timeout(&self, request: Request) -> Result<(), Error>;
 }

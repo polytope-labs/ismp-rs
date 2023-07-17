@@ -3,7 +3,6 @@ use ismp::{
         ConsensusClient, ConsensusClientId, ConsensusStateId, StateCommitment, StateMachineClient,
         StateMachineHeight, StateMachineId, VerifiedCommitments,
     },
-    contracts::Gas,
     error::Error,
     host::{IsmpHost, StateMachine},
     messaging::Proof,
@@ -305,16 +304,16 @@ impl IsmpHost for Host {
 pub struct MockModule;
 
 impl IsmpModule for MockModule {
-    fn on_accept(&self, _request: Post) -> Result<Gas, Error> {
-        Ok(().into())
+    fn on_accept(&self, _request: Post) -> Result<(), Error> {
+        Ok(())
     }
 
-    fn on_response(&self, _response: Response) -> Result<Gas, Error> {
-        Ok(().into())
+    fn on_response(&self, _response: Response) -> Result<(), Error> {
+        Ok(())
     }
 
-    fn on_timeout(&self, _request: Request) -> Result<Gas, Error> {
-        Ok(().into())
+    fn on_timeout(&self, _request: Request) -> Result<(), Error> {
+        Ok(())
     }
 }
 

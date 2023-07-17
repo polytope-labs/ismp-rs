@@ -27,7 +27,6 @@ extern crate alloc;
 extern crate core;
 
 pub mod consensus;
-pub mod contracts;
 pub mod error;
 pub mod handlers;
 pub mod host;

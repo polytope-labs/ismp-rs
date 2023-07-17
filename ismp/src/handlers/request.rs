@@ -54,19 +54,16 @@ where
             let cb = router.module_for_id(request.to.clone())?;
             let res = cb
                 .on_accept(request.clone())
-                .map(|gas| DispatchSuccess {
-                    dest: request.dest,
-                    source: request.source,
+                .map(|_| DispatchSuccess {
+                    dest_chain: request.dest,
+                    source_chain: request.source,
                     nonce: request.nonce,
-                    gas,
-                    module_id: request.to.clone(),
                 })
                 .map_err(|e| DispatchError {
                     msg: format!("{e:?}"),
                     nonce: request.nonce,
-                    source: request.source,
-                    dest: request.dest,
-                    module_id: request.to.clone(),
+                    source_chain: request.source,
+                    dest_chain: request.dest,
                 });
             host.store_request_receipt(&Request::Post(request))?;
             Ok(res)
