@@ -89,7 +89,7 @@ pub struct StateMachineHeight {
     pub height: u64,
 }
 
-/// A map og state machine to verified state commitments
+/// A map of state machine to verified state commitments
 pub type VerifiedCommitments = BTreeMap<StateMachine, Vec<StateCommitmentHeight>>;
 
 /// We define the consensus client as a module that handles logic for consensus proof verification,
