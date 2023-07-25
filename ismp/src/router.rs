@@ -69,8 +69,8 @@ pub struct Get {
     pub height: u64,
     /// Host timestamp at which this request expires in seconds
     pub timeout_timestamp: u64,
-    /// Gas limit for executing the response, should  be zero if this request
-    /// is not dispatched from a contract
+    /// Gas limit for executing the response to this get request
+    /// This value should be zero if the sending module is not a contract
     pub gas_limit: u64,
 }
 
