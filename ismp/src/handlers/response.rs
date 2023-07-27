@@ -75,7 +75,9 @@ where
                             source_chain: response.source_chain(),
                             dest_chain: response.dest_chain(),
                         });
-                    host.store_response_receipt(&response.request())?;
+                    if res.is_ok() {
+                        host.store_response_receipt(&response.request())?;
+                    }
                     Ok(res)
                 })
                 .collect::<Result<Vec<_>, _>>()?
@@ -120,7 +122,9 @@ where
                             source_chain: request.source_chain(),
                             dest_chain: request.dest_chain(),
                         });
-                    host.store_response_receipt(&request)?;
+                    if res.is_ok() {
+                        host.store_response_receipt(&request)?;
+                    }
                     Ok(res)
                 })
                 .collect::<Result<Vec<_>, _>>()?
