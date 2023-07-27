@@ -115,7 +115,7 @@ where
     // check that we have an implementation of this client
     host.consensus_client(message.consensus_client_id)?;
 
-    if let Some(_) = host.consensus_client_id(message.consensus_state_id) {
+    if host.consensus_client_id(message.consensus_state_id).is_some() {
         Err(Error::DuplicateConsensusStateId { consensus_state_id: message.consensus_state_id })?
     }
 
