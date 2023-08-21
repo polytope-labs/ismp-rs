@@ -318,6 +318,7 @@ pub enum DispatchRequest {
 }
 
 /// The Ismp dispatcher allows [`IsmpModules`] to send out outgoing [`Request`] or [`Response`]
+/// [`Event`] should be emitted after successful dispatch
 pub trait IsmpDispatcher {
     /// Dispatches an outgoing request, the dispatcher should commit them to host state trie
     fn dispatch_request(&self, request: DispatchRequest) -> Result<(), Error>;
