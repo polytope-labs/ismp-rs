@@ -2,6 +2,10 @@
 
 Rust implementation of the Interoperable State Machine Protocol. This project is [funded by the web3 foundation](https://github.com/w3f/Grants-Program/blob/master/applications/ismp.md).
 
+## Deprecation 
+
+This repo has been moved to the [hyperbridge repo](https://github.com/polytope-labs/hyperbridge)
+
 ## Overview
 
 This repo provides an implementation of the neccessary components laid out in the [ISMP spec](https://github.com/polytope-labs/ismp).
